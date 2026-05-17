@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Pet_AI_Mobile",
+    "slug": "pet-ai-mobile",
+    "version": "1.0.0",
+    "platforms": ["ios", "android"],
+    "ios": {
+      "bundleIdentifier": "com.example.petai",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Pet_AI cần quyền camera để chụp ảnh thú cưng trước khi phân tích.",
+        "NSPhotoLibraryUsageDescription": "Pet_AI cần quyền thư viện ảnh để chọn ảnh thú cưng trước khi phân tích.",
+        "NSPhotoLibraryAddUsageDescription": "Pet_AI cần quyền lưu ảnh khi bạn muốn lưu ảnh từ ứng dụng."
+      }
+    },
+    "android": {
+      "package": "com.example.petai"
+    }
+  }
+}
