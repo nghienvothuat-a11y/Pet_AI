@@ -1,5 +1,17 @@
-import { useState } from "react";
-import { ActivityIndicator, Alert, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Animated,
+  Easing,
+  Image,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from "react-native";
 import * as ImagePicker from "expo-image-picker";
 
 const API_URL = Platform.OS === "android" ? "http://10.0.2.2:3000/api/analyze" : "http://localhost:3000/api/analyze";
@@ -18,12 +30,17 @@ type HealthAnalysis = {
 };
 
 export default function App() {
+  const [isAppReady, setIsAppReady] = useState(false);
   const [image, setImage] = useState<ImagePicker.ImagePickerResult | null>(null);
   const [analysis, setAnalysis] = useState<HealthAnalysis | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const selectedImageUri = !image || image.canceled ? null : image.assets?.[0]?.uri;
+
+  if (!isAppReady) {
+    return <LoadingScreen onFinish={() => setIsAppReady(true)} />;
+  }
 
   async function requestLibraryPermission() {
     const libraryPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -257,6 +274,93 @@ export default function App() {
   );
 }
 
+function LoadingScreen({ onFinish }: { onFinish: () => void }) {
+  const progress = useRef(new Animated.Value(0)).current;
+  const bounce = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const progressAnimation = Animated.timing(progress, {
+      toValue: 1,
+      duration: 2400,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false
+    });
+    const bounceAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(bounce, {
+          toValue: 1,
+          duration: 320,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: false
+        }),
+        Animated.timing(bounce, {
+          toValue: 0,
+          duration: 320,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: false
+        })
+      ])
+    );
+
+    progressAnimation.start();
+    bounceAnimation.start();
+
+    const timer = setTimeout(onFinish, 2700);
+    return () => {
+      clearTimeout(timer);
+      progressAnimation.stop();
+      bounceAnimation.stop();
+    };
+  }, [bounce, onFinish, progress]);
+
+  const dogTranslateX = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 226]
+  });
+  const dogTranslateY = bounce.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -7]
+  });
+  const barWidth = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["8%", "100%"]
+  });
+
+  return (
+    <View style={styles.loadingScreen}>
+      <View style={styles.loadingHalo}>
+        <View style={styles.loadingLogo}>
+          <Text style={styles.loadingLogoText}>PA</Text>
+        </View>
+      </View>
+      <Text style={styles.loadingTitle}>Pet_AI</Text>
+      <Text style={styles.loadingSubtitle}>Đang chuẩn bị góc kiểm tra cho bé cưng...</Text>
+
+      <View style={styles.loadingTrackWrap}>
+        <Animated.View
+          style={[
+            styles.runningDog,
+            {
+              transform: [{ translateX: dogTranslateX }, { translateY: dogTranslateY }]
+            }
+          ]}
+        >
+          <Text style={styles.runningDogText}>🐕</Text>
+        </Animated.View>
+        <View style={styles.loadingTrack}>
+          <Animated.View style={[styles.loadingFill, { width: barWidth }]} />
+        </View>
+      </View>
+
+      <View style={styles.loadingPaws}>
+        <Text style={styles.loadingPaw}>•</Text>
+        <Text style={styles.loadingPaw}>•</Text>
+        <Text style={styles.loadingPaw}>•</Text>
+      </View>
+    </View>
+  );
+}
+
 function RiskChip({ riskLevel }: { riskLevel: string }) {
   const tone = getRiskTone(riskLevel);
   return (
@@ -323,6 +427,98 @@ function getRiskTone(riskLevel: string) {
 }
 
 const styles = StyleSheet.create({
+  loadingScreen: {
+    flex: 1,
+    backgroundColor: "#FFF8EF",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 28
+  },
+  loadingHalo: {
+    width: 128,
+    height: 128,
+    borderRadius: 48,
+    backgroundColor: "#FFE8D6",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#F3D2B4",
+    shadowColor: "#6D4C32",
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 5
+  },
+  loadingLogo: {
+    width: 88,
+    height: 88,
+    borderRadius: 32,
+    backgroundColor: "#F47C62",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  loadingLogoText: {
+    color: "#FFFFFF",
+    fontSize: 30,
+    fontWeight: "900",
+    letterSpacing: 0
+  },
+  loadingTitle: {
+    color: "#26352B",
+    fontSize: 40,
+    fontWeight: "900",
+    marginTop: 22
+  },
+  loadingSubtitle: {
+    color: "#5E665D",
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: "center",
+    marginTop: 8,
+    marginBottom: 42,
+    maxWidth: 280
+  },
+  loadingTrackWrap: {
+    width: 270,
+    height: 54,
+    justifyContent: "flex-end"
+  },
+  runningDog: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    width: 44,
+    height: 34,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  runningDogText: {
+    fontSize: 28
+  },
+  loadingTrack: {
+    width: "100%",
+    height: 15,
+    borderRadius: 999,
+    backgroundColor: "#F6DEC5",
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#EDC59D"
+  },
+  loadingFill: {
+    height: "100%",
+    borderRadius: 999,
+    backgroundColor: "#2F8F62"
+  },
+  loadingPaws: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 18
+  },
+  loadingPaw: {
+    color: "#F47C62",
+    fontSize: 26,
+    fontWeight: "900"
+  },
   container: {
     padding: 18,
     paddingTop: 54,
