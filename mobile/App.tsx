@@ -341,7 +341,7 @@ function LoadingScreen({ onFinish }: { onFinish: () => void }) {
           style={[
             styles.runningDog,
             {
-              transform: [{ translateX: dogTranslateX }, { translateY: dogTranslateY }]
+              transform: [{ translateX: dogTranslateX }, { translateY: dogTranslateY }, { scaleX: -1 }]
             }
           ]}
         >
