@@ -23,6 +23,7 @@ export default function App() {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const selectedImageUri = !image || image.canceled ? null : image.assets?.[0]?.uri;
 
   async function requestLibraryPermission() {
     const libraryPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -169,85 +170,106 @@ export default function App() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Pet_AI Mobile</Text>
-      <Text style={styles.subtitle}>Sàng lọc sức khỏe chó mèo bằng ảnh</Text>
-
-      <View style={styles.buttonRow}>
-        <TouchableOpacity style={styles.button} onPress={takePhoto}>
-          <Text style={styles.buttonText}>Chụp ảnh</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={pickImage}>
-          <Text style={styles.buttonText}>Chọn ảnh</Text>
-        </TouchableOpacity>
+      <View style={styles.header}>
+        <View style={styles.brandMark}>
+          <Text style={styles.brandMarkText}>PA</Text>
+        </View>
+        <View style={styles.headerCopy}>
+          <Text style={styles.kicker}>Pet health check</Text>
+          <Text style={styles.title}>Pet_AI</Text>
+          <Text style={styles.subtitle}>Kiểm tra nhanh sức khỏe bé cưng từ một bức ảnh rõ nét.</Text>
+        </View>
       </View>
 
-      {image && image.assets?.[0]?.uri ? (
-        <Image source={{ uri: image.assets[0].uri }} style={styles.preview} />
-      ) : (
-        <View style={styles.emptyPreview}>
-          <Text style={styles.emptyText}>Chưa có ảnh</Text>
+      <View style={styles.photoPanel}>
+        {selectedImageUri ? (
+          <View style={styles.previewWrap}>
+            <Image source={{ uri: selectedImageUri }} style={styles.preview} />
+            <View style={styles.readyBadge}>
+              <Text style={styles.readyBadgeText}>Sẵn sàng phân tích</Text>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.emptyPreview}>
+            <View style={styles.emptyIcon}>
+              <Text style={styles.emptyIconText}>+</Text>
+            </View>
+            <Text style={styles.emptyTitle}>Thêm ảnh bé cưng</Text>
+            <Text style={styles.emptyText}>Ảnh rõ mặt, mắt, da hoặc vùng lông bất thường sẽ giúp kết quả tốt hơn.</Text>
+          </View>
+        )}
+
+        <View style={styles.buttonRow}>
+          <TouchableOpacity style={styles.secondaryButton} onPress={takePhoto} activeOpacity={0.85}>
+            <Text style={styles.buttonIcon}>CA</Text>
+            <Text style={styles.secondaryButtonText}>Chụp ảnh</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.secondaryButton} onPress={pickImage} activeOpacity={0.85}>
+            <Text style={styles.buttonIcon}>PH</Text>
+            <Text style={styles.secondaryButtonText}>Chọn ảnh</Text>
+          </TouchableOpacity>
         </View>
-      )}
 
-      <TouchableOpacity style={[styles.button, styles.analyzeButton]} onPress={analyzeImage} disabled={isLoading}>
-        <Text style={styles.buttonText}>{isLoading ? "Đang phân tích..." : "Phân tích sức khỏe"}</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.analyzeButton, (!selectedImageUri || isLoading) && styles.disabledButton]}
+          onPress={analyzeImage}
+          disabled={isLoading || !selectedImageUri}
+          activeOpacity={0.9}
+        >
+          {isLoading ? <ActivityIndicator color="#ffffff" /> : null}
+          <Text style={styles.analyzeButtonText}>{isLoading ? "Đang phân tích..." : "Phân tích sức khỏe"}</Text>
+        </TouchableOpacity>
 
-      {status ? <Text style={styles.status}>{status}</Text> : null}
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+        {status ? <Text style={styles.status}>{status}</Text> : null}
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+      </View>
 
       {analysis ? (
-        <View style={styles.resultBox}>
-          <Text style={styles.resultHeading}>Kết quả phân tích</Text>
-          <ResultRow label="Loại thú cưng" value={analysis.petTypeGuess} />
-          <ResultRow label="Mức rủi ro" value={analysis.riskLevel} />
-          <ResultText label="Tóm tắt" value={analysis.summary} />
-          <ResultList label="Quan sát" items={analysis.observations} />
-          <ResultList label="Lo ngại" items={analysis.possibleConcerns} />
-          <ResultList label="Hành động đề xuất" items={analysis.recommendedActions} />
-          <ResultText label="Lời khuyên thú y" value={analysis.vetCareAdvice} />
-          <ResultText label="Cảm xúc" value={analysis.emotion} />
-          <ResultText label="Suy nghĩ pet" value={analysis.petThought} />
-          <ResultText label="Giới hạn" value={analysis.limitations} />
+        <View style={styles.resultsSection}>
+          <View style={styles.resultsHeader}>
+            <View>
+              <Text style={styles.sectionEyebrow}>Kết quả</Text>
+              <Text style={styles.resultHeading}>Tình trạng sơ bộ</Text>
+            </View>
+            <RiskChip riskLevel={analysis.riskLevel} />
+          </View>
+
+          <View style={styles.summaryCard}>
+            <Text style={styles.cardLabel}>{analysis.petTypeGuess}</Text>
+            <Text style={styles.summaryText}>{analysis.summary}</Text>
+          </View>
+
+          <ResultCard title="Quan sát thấy" items={analysis.observations} />
+          <ResultCard title="Điểm cần chú ý" items={analysis.possibleConcerns} emptyText="Chưa thấy dấu hiệu đáng lo rõ ràng." />
+          <ResultCard title="Nên làm tiếp" items={analysis.recommendedActions} />
+          <InfoCard title="Lời khuyên thú y" value={analysis.vetCareAdvice} />
+          <InfoCard title="Cảm xúc của bé" value={analysis.emotion} />
+          <InfoCard title="Một chút tưởng tượng" value={analysis.petThought} />
+          <InfoCard title="Giới hạn" value={analysis.limitations} muted />
         </View>
       ) : null}
 
-      <View style={styles.noteBox}>
-        <Text style={styles.noteTitle}>Lưu ý</Text>
-        <Text style={styles.noteText}>
-          Ứng dụng này cần backend Next.js đang chạy trên máy hoặc trên server để gọi API.
-        </Text>
-        <Text style={styles.noteText}>Mặc định đang dùng: {API_URL}</Text>
-        <Text style={styles.noteText}>
-          Nếu dùng thiết bị thật, hãy cập nhật `API_URL` trong `App.tsx` thành địa chỉ IP của máy chủ.
-        </Text>
-      </View>
+      <Text style={styles.safetyNote}>
+        Pet_AI chỉ hỗ trợ sàng lọc ban đầu. Nếu bé khó thở, chảy máu, co giật, bỏ ăn kéo dài hoặc đau nhiều,
+        hãy đưa bé đến bác sĩ thú y ngay.
+      </Text>
     </ScrollView>
   );
 }
 
-function ResultRow({ label, value }: { label: string; value: string }) {
+function RiskChip({ riskLevel }: { riskLevel: string }) {
+  const tone = getRiskTone(riskLevel);
   return (
-    <View style={styles.resultRow}>
-      <Text style={styles.resultLabel}>{label}:</Text>
-      <Text style={styles.resultValue}>{value}</Text>
+    <View style={[styles.riskChip, tone.container]}>
+      <Text style={[styles.riskChipText, tone.text]}>{riskLevel}</Text>
     </View>
   );
 }
 
-function ResultText({ label, value }: { label: string; value: string }) {
+function ResultCard({ title, items, emptyText = "Không có mục nào." }: { title: string; items: string[]; emptyText?: string }) {
   return (
-    <View style={styles.resultBlock}>
-      <Text style={styles.resultLabel}>{label}:</Text>
-      <Text style={styles.resultValue}>{value}</Text>
-    </View>
-  );
-}
-
-function ResultList({ label, items }: { label: string; items: string[] }) {
-  return (
-    <View style={styles.resultBlock}>
-      <Text style={styles.resultLabel}>{label}:</Text>
+    <View style={styles.resultCard}>
+      <Text style={styles.resultLabel}>{title}</Text>
       {items.length > 0 ? (
         items.map((item, index) => (
           <Text key={index} style={styles.resultValue}>
@@ -255,128 +277,354 @@ function ResultList({ label, items }: { label: string; items: string[] }) {
           </Text>
         ))
       ) : (
-        <Text style={styles.resultValue}>Không có mục nào.</Text>
+        <Text style={styles.resultValue}>{emptyText}</Text>
       )}
     </View>
   );
 }
 
+function InfoCard({ title, value, muted = false }: { title: string; value: string; muted?: boolean }) {
+  return (
+    <View style={[styles.resultCard, muted && styles.mutedCard]}>
+      <Text style={styles.resultLabel}>{title}</Text>
+      <Text style={styles.resultValue}>{value}</Text>
+    </View>
+  );
+}
+
+function getRiskTone(riskLevel: string) {
+  const normalized = riskLevel.toLowerCase();
+
+  if (normalized.includes("cao") || normalized.includes("ngay")) {
+    return {
+      container: styles.riskHigh,
+      text: styles.riskHighText
+    };
+  }
+
+  if (normalized.includes("trung")) {
+    return {
+      container: styles.riskMedium,
+      text: styles.riskMediumText
+    };
+  }
+
+  if (normalized.includes("thấp")) {
+    return {
+      container: styles.riskLow,
+      text: styles.riskLowText
+    };
+  }
+
+  return {
+    container: styles.riskUnknown,
+    text: styles.riskUnknownText
+  };
+}
+
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    paddingTop: 50,
-    backgroundColor: "#f8fafc",
+    padding: 18,
+    paddingTop: 54,
+    backgroundColor: "#FFF8EF",
     minHeight: "100%"
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 22
+  },
+  brandMark: {
+    width: 64,
+    height: 64,
+    borderRadius: 24,
+    backgroundColor: "#F47C62",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 14,
+    shadowColor: "#7A2F25",
+    shadowOpacity: 0.14,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4
+  },
+  brandMarkText: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "900",
+    letterSpacing: 0
+  },
+  headerCopy: {
+    flex: 1
+  },
+  kicker: {
+    color: "#5C8A63",
+    fontSize: 12,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    marginBottom: 4
+  },
   title: {
-    fontSize: 28,
-    fontWeight: "700",
-    marginBottom: 8,
-    color: "#111827"
+    fontSize: 34,
+    fontWeight: "900",
+    color: "#26352B"
   },
   subtitle: {
-    fontSize: 16,
-    color: "#374151",
-    marginBottom: 20
+    fontSize: 15,
+    color: "#5E665D",
+    lineHeight: 21,
+    marginTop: 4
   },
-  buttonRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 20
+  photoPanel: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 28,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#F1DFCC",
+    shadowColor: "#6D4C32",
+    shadowOpacity: 0.09,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 4
   },
-  button: {
-    backgroundColor: "#2563eb",
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    borderRadius: 12,
-    flex: 1,
-    marginHorizontal: 4,
-    alignItems: "center"
-  },
-  analyzeButton: {
-    marginTop: 12,
-    backgroundColor: "#16a34a"
-  },
-  buttonText: {
-    color: "white",
-    fontWeight: "600"
+  previewWrap: {
+    position: "relative",
+    marginBottom: 14
   },
   preview: {
     width: "100%",
     aspectRatio: 4 / 3,
-    borderRadius: 14,
-    marginBottom: 12,
-    backgroundColor: "#d1d5db"
+    borderRadius: 22,
+    backgroundColor: "#E8DED1"
+  },
+  readyBadge: {
+    position: "absolute",
+    left: 12,
+    bottom: 12,
+    backgroundColor: "#2F8F62",
+    borderRadius: 999,
+    paddingVertical: 7,
+    paddingHorizontal: 12
+  },
+  readyBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "800"
   },
   emptyPreview: {
     width: "100%",
     aspectRatio: 4 / 3,
-    borderRadius: 14,
-    backgroundColor: "#e5e7eb",
+    borderRadius: 22,
+    borderWidth: 2,
+    borderStyle: "dashed",
+    borderColor: "#F2C99E",
+    backgroundColor: "#FFF4E8",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 12
+    padding: 26,
+    marginBottom: 14
+  },
+  emptyIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 20,
+    backgroundColor: "#F47C62",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14
+  },
+  emptyIconText: {
+    color: "#FFFFFF",
+    fontSize: 30,
+    fontWeight: "600",
+    lineHeight: 34
+  },
+  emptyTitle: {
+    color: "#26352B",
+    fontSize: 20,
+    fontWeight: "900",
+    marginBottom: 8,
+    textAlign: "center"
   },
   emptyText: {
-    color: "#6b7280"
+    color: "#74695C",
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: "center"
+  },
+  buttonRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 12
+  },
+  secondaryButton: {
+    flex: 1,
+    minHeight: 54,
+    borderRadius: 18,
+    backgroundColor: "#EEF7EF",
+    borderWidth: 1,
+    borderColor: "#CDE6D1",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    paddingHorizontal: 10
+  },
+  buttonIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 10,
+    backgroundColor: "#D9F0DE",
+    color: "#2F8F62",
+    fontSize: 10,
+    fontWeight: "900",
+    textAlign: "center",
+    lineHeight: 28,
+    marginRight: 8
+  },
+  secondaryButtonText: {
+    color: "#2A5F3A",
+    fontWeight: "900",
+    fontSize: 14
+  },
+  analyzeButton: {
+    minHeight: 58,
+    borderRadius: 20,
+    backgroundColor: "#2F8F62",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    shadowColor: "#1A5D3D",
+    shadowOpacity: 0.22,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4
+  },
+  disabledButton: {
+    opacity: 0.58
+  },
+  analyzeButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "900",
+    fontSize: 16,
+    marginLeft: 8
   },
   status: {
-    color: "#0f766e",
-    marginTop: 10,
-    fontWeight: "600"
+    color: "#2F8F62",
+    marginTop: 12,
+    fontWeight: "800",
+    textAlign: "center"
   },
   error: {
-    color: "#b91c1c",
-    marginTop: 10,
-    fontWeight: "600"
+    color: "#B84B41",
+    marginTop: 12,
+    fontWeight: "800",
+    textAlign: "center",
+    lineHeight: 20
   },
-  resultBox: {
-    marginTop: 24,
-    backgroundColor: "white",
-    padding: 16,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3
+  resultsSection: {
+    marginTop: 22
+  },
+  resultsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12
+  },
+  sectionEyebrow: {
+    color: "#F47C62",
+    fontSize: 12,
+    fontWeight: "900",
+    textTransform: "uppercase",
+    marginBottom: 2
   },
   resultHeading: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 12,
-    color: "#111827"
+    fontSize: 24,
+    fontWeight: "900",
+    color: "#26352B"
   },
-  resultRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  riskChip: {
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    maxWidth: 150
+  },
+  riskChipText: {
+    fontSize: 12,
+    fontWeight: "900",
+    textAlign: "center"
+  },
+  riskLow: {
+    backgroundColor: "#DFF3E5"
+  },
+  riskLowText: {
+    color: "#28764A"
+  },
+  riskMedium: {
+    backgroundColor: "#FFF0C7"
+  },
+  riskMediumText: {
+    color: "#8A5D00"
+  },
+  riskHigh: {
+    backgroundColor: "#FFE0DC"
+  },
+  riskHighText: {
+    color: "#B24036"
+  },
+  riskUnknown: {
+    backgroundColor: "#ECEBE7"
+  },
+  riskUnknownText: {
+    color: "#5F5B53"
+  },
+  summaryCard: {
+    backgroundColor: "#26352B",
+    borderRadius: 22,
+    padding: 18,
+    marginBottom: 12
+  },
+  cardLabel: {
+    color: "#BFE6C7",
+    fontSize: 13,
+    fontWeight: "900",
     marginBottom: 8
   },
-  resultBlock: {
-    marginBottom: 10
+  summaryText: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    lineHeight: 25,
+    fontWeight: "700"
+  },
+  resultCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#F1DFCC"
+  },
+  mutedCard: {
+    backgroundColor: "#FBF2E8"
   },
   resultLabel: {
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 4
+    fontWeight: "900",
+    color: "#26352B",
+    marginBottom: 8,
+    fontSize: 15
   },
   resultValue: {
-    color: "#374151",
-    lineHeight: 22
+    color: "#545D52",
+    lineHeight: 22,
+    fontSize: 14,
+    marginBottom: 4
   },
-  noteBox: {
-    marginTop: 24,
-    padding: 14,
-    backgroundColor: "#e0f2fe",
-    borderRadius: 14
-  },
-  noteTitle: {
-    fontWeight: "700",
-    marginBottom: 6,
-    color: "#0c4a6e"
-  },
-  noteText: {
-    color: "#0f172a",
-    marginBottom: 4,
-    lineHeight: 20
+  safetyNote: {
+    color: "#74695C",
+    fontSize: 13,
+    lineHeight: 20,
+    textAlign: "center",
+    marginTop: 14,
+    marginBottom: 28,
+    paddingHorizontal: 8
   }
 });
