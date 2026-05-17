@@ -190,13 +190,13 @@ export default function App() {
             </View>
           </View>
         ) : (
-          <View style={styles.emptyPreview}>
+          <TouchableOpacity style={styles.emptyPreview} onPress={pickImage} activeOpacity={0.86}>
             <View style={styles.emptyIcon}>
               <Text style={styles.emptyIconText}>+</Text>
             </View>
             <Text style={styles.emptyTitle}>Thêm ảnh bé cưng</Text>
             <Text style={styles.emptyText}>Ảnh rõ mặt, mắt, da hoặc vùng lông bất thường sẽ giúp kết quả tốt hơn.</Text>
-          </View>
+          </TouchableOpacity>
         )}
 
         <View style={styles.buttonRow}>
