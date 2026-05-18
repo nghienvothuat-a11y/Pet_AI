@@ -272,6 +272,13 @@ export default function App() {
             <Text style={styles.summaryText}>{analysis.summary}</Text>
           </View>
 
+          <View style={styles.quickResultCard}>
+            <Text style={styles.quickResultLabel}>Kết luận nhanh</Text>
+            <Text style={styles.quickResultText}>
+              Nghi ngờ bị {getConcernText(analysis)}. Lý do: {getObservationText(analysis)}.
+            </Text>
+          </View>
+
           <ResultCard title="Quan sát thấy" items={analysis.observations} />
           <ResultCard title="Điểm cần chú ý" items={analysis.possibleConcerns} emptyText="Chưa thấy dấu hiệu đáng lo rõ ràng." />
           <ResultCard title="Nên làm tiếp" items={analysis.recommendedActions} />
@@ -288,6 +295,35 @@ export default function App() {
       </Text>
     </ScrollView>
   );
+}
+
+function getConcernText(analysis: HealthAnalysis) {
+  const concernText = analysis.possibleConcerns
+    .filter((concern) => !concern.toLowerCase().includes("chưa thấy"))
+    .slice(0, 2)
+    .join(", ");
+
+  if (concernText) {
+    return stripLeadingConcernPhrase(concernText);
+  }
+
+  const summaryConcern = analysis.summary.match(/nghi ngờ (?:bị|có)?\s*([^.;]+)/i)?.[1]?.trim();
+  if (summaryConcern) {
+    return stripLeadingConcernPhrase(summaryConcern);
+  }
+
+  return "bệnh hoặc vấn đề cụ thể cần bác sĩ thú y kiểm tra thêm";
+}
+
+function getObservationText(analysis: HealthAnalysis) {
+  return analysis.observations.slice(0, 3).join(", ") || "ảnh chưa đủ rõ để đánh giá";
+}
+
+function stripLeadingConcernPhrase(text: string) {
+  return text
+    .replace(/^nghi ngờ\s+(bị|có)?\s*/i, "")
+    .replace(/^bị\s+/i, "")
+    .trim();
 }
 
 function LoadingScreen({ onFinish }: { onFinish: () => void }) {
@@ -818,6 +854,26 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 25,
     fontWeight: "700"
+  },
+  quickResultCard: {
+    backgroundColor: "#FFF1D8",
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#F0C58B"
+  },
+  quickResultLabel: {
+    color: "#8A5D00",
+    fontSize: 13,
+    fontWeight: "900",
+    marginBottom: 6
+  },
+  quickResultText: {
+    color: "#26352B",
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: "800"
   },
   resultCard: {
     backgroundColor: "#FFFFFF",
