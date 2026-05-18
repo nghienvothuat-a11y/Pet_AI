@@ -9,7 +9,7 @@
       "apiUrl": "https://pet-ai-sooty.vercel.app/api/analyze"
     },
     "ios": {
-      "bundleIdentifier": "com.nghienvothuat.petai",
+      "bundleIdentifier": "com.phamduckien.petai",
       "buildNumber": "1",
       "infoPlist": {
         "NSCameraUsageDescription": "Pet_AI cần quyền camera để chụp ảnh thú cưng trước khi phân tích.",
@@ -18,7 +18,7 @@
       }
     },
     "android": {
-      "package": "com.nghienvothuat.petai"
+      "package": "com.phamduckien.petai"
     }
   }
 }
