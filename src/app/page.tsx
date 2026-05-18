@@ -34,6 +34,7 @@ export default function Home() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [originalFileName, setOriginalFileName] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [symptoms, setSymptoms] = useState("");
   const [analysis, setAnalysis] = useState<PetHealthAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -102,6 +103,7 @@ export default function Home() {
 
     const formData = new FormData();
     formData.append("image", imageFile);
+    formData.append("symptoms", symptoms.trim());
 
     try {
       setStatusMessage("AI đang phân tích ảnh. Bước này có thể mất 10-30 giây.");
@@ -137,19 +139,39 @@ export default function Home() {
   return (
     <main className="shell">
       <section className="hero">
-        <div>
-          <p className="eyebrow">Pet_AI</p>
-          <h1>Sàng lọc sức khỏe cho chó và mèo bằng ảnh</h1>
+        <div className="brandMark">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-ai-paw.png" alt="Pet_AI logo" />
         </div>
-        <p>
-          Chụp ảnh rõ khu vực bạn đang lo lắng. AI sẽ nêu dấu hiệu quan sát được, mức rủi ro và bước nên làm tiếp.
-        </p>
+        <div className="heroCopy">
+          <p className="eyebrow">Pet health check</p>
+          <h1>Pet_AI</h1>
+          <p>Kiểm tra nhanh sức khỏe bé cưng từ ảnh rõ nét và triệu chứng bạn quan sát được.</p>
+        </div>
       </section>
 
       <form className="capturePanel" onSubmit={handleSubmit}>
+        <div className="previewBox">
+          {previewUrl ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={previewUrl} alt="Ảnh thú cưng đã chọn" />
+              <span className="readyBadge">Sẵn sàng phân tích</span>
+            </>
+          ) : (
+            <label className="emptyPreview">
+              <input type="file" accept="image/*" onChange={handleFileChange} aria-label="Chọn ảnh thú cưng" />
+              <span className="emptyIcon">+</span>
+              <strong>Thêm ảnh bé cưng</strong>
+              <span>Ảnh rõ mặt, mắt, da hoặc vùng lông bất thường sẽ giúp kết quả tốt hơn.</span>
+            </label>
+          )}
+        </div>
+
         <div className="buttonRow">
           <label className="secondaryButton filePicker">
-            Chụp ảnh
+            <span className="buttonIcon">CA</span>
+            <span>Chụp ảnh</span>
             <input
               type="file"
               accept="image/*"
@@ -159,21 +181,20 @@ export default function Home() {
             />
           </label>
           <label className="secondaryButton filePicker">
-            Chọn ảnh
+            <span className="buttonIcon">PH</span>
+            <span>Chọn ảnh</span>
             <input type="file" accept="image/*" onChange={handleFileChange} aria-label="Chọn ảnh thú cưng" />
           </label>
         </div>
 
-        <div className="previewBox">
-          {previewUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={previewUrl} alt="Ảnh thú cưng đã chọn" />
-          ) : (
-            <div className="emptyPreview">
-              <span>Chưa có ảnh</span>
-            </div>
-          )}
-        </div>
+        <textarea
+          className="symptomsInput"
+          value={symptoms}
+          onChange={(event) => setSymptoms(event.target.value)}
+          placeholder="Nhập thông tin triệu chứng để AI phân tích chính xác hơn"
+          maxLength={500}
+          disabled={isLoading}
+        />
 
         {imageFile ? (
           <p className="fileMeta">
@@ -263,7 +284,6 @@ function formatBytes(bytes: number) {
 function AnalysisResult({ analysis }: { analysis: PetHealthAnalysis }) {
   const concernText = analysis.possibleConcerns.slice(0, 2).join(", ");
   const observationText = analysis.observations.slice(0, 3).join(", ");
-  const actionText = analysis.recommendedActions.slice(0, 2).join(" ");
   const looksNormal =
     analysis.riskLevel === "low" &&
     (!concernText || concernText.toLowerCase().includes("chưa thấy") || analysis.summary.toLowerCase().includes("bình thường"));
@@ -274,9 +294,14 @@ function AnalysisResult({ analysis }: { analysis: PetHealthAnalysis }) {
       <div className="resultHeader">
         <div>
           <p className="eyebrow">Kết quả</p>
-          <h2>{analysis.summary}</h2>
+          <h2>Tình trạng sơ bộ</h2>
         </div>
         <span className={`riskBadge ${riskClasses[analysis.riskLevel]}`}>{riskLabels[analysis.riskLevel]}</span>
+      </div>
+
+      <div className="summaryCard">
+        <p className="cardLabel">{analysis.petTypeGuess}</p>
+        <p>{analysis.summary}</p>
       </div>
 
       <div className="quickResult">
@@ -288,15 +313,15 @@ function AnalysisResult({ analysis }: { analysis: PetHealthAnalysis }) {
             {observationText || "ảnh chưa đủ rõ để đánh giá"}.
           </p>
         )}
-        <p>{actionText || analysis.vetCareAdvice}</p>
       </div>
 
-      <div className="adviceBox">
-        <h3>Khuyến cáo</h3>
-        <p>{analysis.vetCareAdvice}</p>
-      </div>
-
-      <p className="limitations">{analysis.limitations}</p>
+      <ResultList title="Quan sát thấy" items={analysis.observations} />
+      <ResultList title="Điểm cần chú ý" items={analysis.possibleConcerns} emptyText="Chưa thấy dấu hiệu đáng lo rõ ràng." />
+      <ResultList title="Nên làm tiếp" items={analysis.recommendedActions} />
+      <InfoCard title="Lời khuyên thú y" value={analysis.vetCareAdvice} />
+      <InfoCard title="Cảm xúc của bé" value={analysis.emotion} />
+      <InfoCard title="Một chút tưởng tượng" value={analysis.petThought} />
+      <InfoCard title="Giới hạn" value={analysis.limitations} muted />
     </section>
   );
 }
@@ -323,15 +348,28 @@ function hashText(text: string) {
 }
 
 
-function ResultList({ title, items }: { title: string; items: string[] }) {
+function ResultList({ title, items, emptyText = "Không có mục nào." }: { title: string; items: string[]; emptyText?: string }) {
   return (
-    <div className="resultBlock">
+    <div className="resultCard">
       <h3>{title}</h3>
-      <ul>
-        {items.map((item, index) => (
-          <li key={`${title}-${index}`}>{item}</li>
-        ))}
-      </ul>
+      {items.length > 0 ? (
+        <ul>
+          {items.map((item, index) => (
+            <li key={`${title}-${index}`}>{item}</li>
+          ))}
+        </ul>
+      ) : (
+        <p>{emptyText}</p>
+      )}
+    </div>
+  );
+}
+
+function InfoCard({ title, value, muted = false }: { title: string; value: string; muted?: boolean }) {
+  return (
+    <div className={`resultCard ${muted ? "mutedCard" : ""}`}>
+      <h3>{title}</h3>
+      <p>{value}</p>
     </div>
   );
 }
