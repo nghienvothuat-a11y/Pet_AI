@@ -1,0 +1,11 @@
+mobile/node_modules
+mobile/ios
+mobile/android
+mobile/.expo
+node_modules
+.next
+.git
+tsconfig.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
