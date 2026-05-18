@@ -222,5 +222,30 @@ export function parseAnalysis(text: string): PetHealthAnalysis {
     }
   }
 
-  return value as PetHealthAnalysis;
+  return normalizeAnalysisText(value as PetHealthAnalysis);
+}
+
+function normalizeAnalysisText(analysis: PetHealthAnalysis): PetHealthAnalysis {
+  return {
+    ...analysis,
+    summary: normalizeResultText(analysis.summary),
+    observations: analysis.observations.map(normalizeResultText),
+    possibleConcerns: analysis.possibleConcerns.map(normalizeResultText),
+    recommendedActions: analysis.recommendedActions.map(normalizeResultText),
+    vetCareAdvice: normalizeResultText(analysis.vetCareAdvice),
+    emotion: normalizeResultText(analysis.emotion),
+    petThought: normalizeResultText(analysis.petThought),
+    limitations: normalizeResultText(analysis.limitations)
+  };
+}
+
+function normalizeResultText(text: string) {
+  return text
+    .replace(/\b[Cc]ó thể là\b/g, "Nghi ngờ bị")
+    .replace(/\s*,?\s*nhưng\s+không\s+chắc\s+chắn/gi, "")
+    .replace(/\s*,?\s*nhưng\s+chưa\s+chắc\s+chắn/gi, "")
+    .replace(/\bkhông\s+chắc\s+chắn\b/gi, "cần kiểm tra thêm")
+    .replace(/\bchưa\s+chắc\s+chắn\b/gi, "cần kiểm tra thêm")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }

@@ -309,7 +309,7 @@ function AnalysisResult({ analysis }: { analysis: PetHealthAnalysis }) {
           <p className="petThought">“{petThought}”</p>
         ) : (
           <p>
-            Có thể là {concernText || "một vấn đề sức khỏe bất thường"}, nhưng không chắc chắn. Lý do:{" "}
+            Nghi ngờ bị {concernText || "một vấn đề sức khỏe bất thường"}. Lý do:{" "}
             {observationText || "ảnh chưa đủ rõ để đánh giá"}.
           </p>
         )}
