@@ -15,6 +15,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 
 const API_URL = Platform.OS === "android" ? "http://10.0.2.2:3000/api/analyze" : "http://localhost:3000/api/analyze";
+const APP_LOGO = require("./assets/logo-ai-paw.png");
 
 type HealthAnalysis = {
   petTypeGuess: string;
@@ -189,7 +190,7 @@ export default function App() {
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
         <View style={styles.brandMark}>
-          <Text style={styles.brandMarkText}>PA</Text>
+          <Image source={APP_LOGO} style={styles.brandLogo} />
         </View>
         <View style={styles.headerCopy}>
           <Text style={styles.kicker}>Pet health check</Text>
@@ -330,7 +331,7 @@ function LoadingScreen({ onFinish }: { onFinish: () => void }) {
     <View style={styles.loadingScreen}>
       <View style={styles.loadingHalo}>
         <View style={styles.loadingLogo}>
-          <Text style={styles.loadingLogoText}>PA</Text>
+          <Image source={APP_LOGO} style={styles.loadingLogoImage} />
         </View>
       </View>
       <Text style={styles.loadingTitle}>Pet_AI</Text>
@@ -453,15 +454,14 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 32,
-    backgroundColor: "#F47C62",
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    overflow: "hidden"
   },
-  loadingLogoText: {
-    color: "#FFFFFF",
-    fontSize: 30,
-    fontWeight: "900",
-    letterSpacing: 0
+  loadingLogoImage: {
+    width: "100%",
+    height: "100%"
   },
   loadingTitle: {
     color: "#26352B",
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 24,
-    backgroundColor: "#F47C62",
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 14,
@@ -542,13 +542,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.14,
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 8 },
-    elevation: 4
+    elevation: 4,
+    overflow: "hidden"
   },
-  brandMarkText: {
-    color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "900",
-    letterSpacing: 0
+  brandLogo: {
+    width: "100%",
+    height: "100%"
   },
   headerCopy: {
     flex: 1
