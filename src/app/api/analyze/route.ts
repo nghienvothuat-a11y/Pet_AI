@@ -11,6 +11,7 @@ export const runtime = "nodejs";
 
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const OPENAI_TIMEOUT_MS = 75_000;
+const MAX_SYMPTOMS_LENGTH = 500;
 
 const systemPrompt = [
   "Bạn là trợ lý AI sàng lọc sức khỏe sơ bộ cho chó và mèo qua ảnh.",
@@ -51,6 +52,9 @@ export async function POST(request: Request) {
   }
 
   const image = formData.get("image");
+  const symptomsValue = formData.get("symptoms");
+  const symptoms =
+    typeof symptomsValue === "string" ? symptomsValue.trim().slice(0, MAX_SYMPTOMS_LENGTH) : "";
 
   if (!(image instanceof File)) {
     return jsonError("Vui lòng chọn một ảnh để phân tích.");
@@ -90,7 +94,12 @@ export async function POST(request: Request) {
             content: [
               {
                 type: "input_text",
-                text: "Hãy phân tích ảnh thú cưng này theo schema JSON đã yêu cầu. Đây là công cụ sàng lọc sơ bộ, không phải chẩn đoán."
+                text: [
+                  "Hãy phân tích ảnh thú cưng này theo schema JSON đã yêu cầu. Đây là công cụ sàng lọc sơ bộ, không phải chẩn đoán.",
+                  symptoms
+                    ? `Thông tin triệu chứng chủ nuôi cung cấp thêm: ${symptoms}. Hãy kết hợp thông tin này với ảnh, nhưng nếu triệu chứng mâu thuẫn hoặc không thể xác minh từ ảnh thì nói rõ là chưa chắc chắn.`
+                    : "Chủ nuôi chưa nhập thêm thông tin triệu chứng."
+                ].join("\n")
               },
               {
                 type: "input_image",

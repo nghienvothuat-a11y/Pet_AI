@@ -9,6 +9,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View
 } from "react-native";
@@ -34,6 +35,7 @@ export default function App() {
   const [isAppReady, setIsAppReady] = useState(false);
   const [image, setImage] = useState<ImagePicker.ImagePickerResult | null>(null);
   const [analysis, setAnalysis] = useState<HealthAnalysis | null>(null);
+  const [symptoms, setSymptoms] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -162,6 +164,7 @@ export default function App() {
       name: fileName,
       type: fileType
     } as any);
+    formData.append("symptoms", symptoms.trim());
 
     try {
       setStatus("AI đang phân tích ảnh. Vui lòng đợi...");
@@ -227,6 +230,18 @@ export default function App() {
             <Text style={styles.secondaryButtonText}>Chọn ảnh</Text>
           </TouchableOpacity>
         </View>
+
+        <TextInput
+          style={styles.symptomsInput}
+          value={symptoms}
+          onChangeText={setSymptoms}
+          placeholder="Nhập thông tin triệu chứng để AI phân tích chính xác hơn"
+          placeholderTextColor="#A99B8B"
+          multiline
+          textAlignVertical="top"
+          maxLength={500}
+          editable={!isLoading}
+        />
 
         <TouchableOpacity
           style={[styles.analyzeButton, (!selectedImageUri || isLoading) && styles.disabledButton]}
@@ -680,6 +695,20 @@ const styles = StyleSheet.create({
     color: "#2A5F3A",
     fontWeight: "900",
     fontSize: 14
+  },
+  symptomsInput: {
+    minHeight: 92,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#F1DFCC",
+    backgroundColor: "#FFF8EF",
+    color: "#26352B",
+    fontSize: 14,
+    lineHeight: 20,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 12,
+    marginBottom: 12
   },
   analyzeButton: {
     minHeight: 58,
