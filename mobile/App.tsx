@@ -13,9 +13,16 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import Constants from "expo-constants";
 import * as ImagePicker from "expo-image-picker";
 
-const API_URL = Platform.OS === "android" ? "http://10.0.2.2:3000/api/analyze" : "http://localhost:3000/api/analyze";
+const configuredApiUrl = Constants.expoConfig?.extra?.apiUrl;
+const API_URL =
+  typeof configuredApiUrl === "string" && configuredApiUrl
+    ? configuredApiUrl
+    : Platform.OS === "android"
+      ? "http://10.0.2.2:3000/api/analyze"
+      : "http://localhost:3000/api/analyze";
 const APP_LOGO = require("./assets/logo-ai-paw.png");
 
 type HealthAnalysis = {
