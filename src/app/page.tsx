@@ -282,7 +282,7 @@ function formatBytes(bytes: number) {
 }
 
 function AnalysisResult({ analysis }: { analysis: PetHealthAnalysis }) {
-  const concernText = analysis.possibleConcerns.slice(0, 2).join(", ");
+  const concernText = getConcernText(analysis);
   const observationText = analysis.observations.slice(0, 3).join(", ");
   const looksNormal =
     analysis.riskLevel === "low" &&
@@ -309,7 +309,7 @@ function AnalysisResult({ analysis }: { analysis: PetHealthAnalysis }) {
           <p className="petThought">“{petThought}”</p>
         ) : (
           <p>
-            Nghi ngờ bị {concernText || "một vấn đề sức khỏe bất thường"}. Lý do:{" "}
+            Nghi ngờ bị {concernText}. Lý do:{" "}
             {observationText || "ảnh chưa đủ rõ để đánh giá"}.
           </p>
         )}
@@ -324,6 +324,31 @@ function AnalysisResult({ analysis }: { analysis: PetHealthAnalysis }) {
       <InfoCard title="Giới hạn" value={analysis.limitations} muted />
     </section>
   );
+}
+
+function getConcernText(analysis: PetHealthAnalysis) {
+  const concernText = analysis.possibleConcerns
+    .filter((concern) => !concern.toLowerCase().includes("chưa thấy"))
+    .slice(0, 2)
+    .join(", ");
+
+  if (concernText) {
+    return stripLeadingConcernPhrase(concernText);
+  }
+
+  const summaryConcern = analysis.summary.match(/nghi ngờ (?:bị|có)?\s*([^.;]+)/i)?.[1]?.trim();
+  if (summaryConcern) {
+    return stripLeadingConcernPhrase(summaryConcern);
+  }
+
+  return "bệnh hoặc vấn đề cụ thể cần bác sĩ thú y kiểm tra thêm";
+}
+
+function stripLeadingConcernPhrase(text: string) {
+  return text
+    .replace(/^nghi ngờ\s+(bị|có)?\s*/i, "")
+    .replace(/^bị\s+/i, "")
+    .trim();
 }
 
 function normalizePetThought(petThought: string) {

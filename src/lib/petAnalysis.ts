@@ -242,6 +242,7 @@ function normalizeAnalysisText(analysis: PetHealthAnalysis): PetHealthAnalysis {
 function normalizeResultText(text: string) {
   return text
     .replace(/\b[Cc]ó thể là\b/g, "Nghi ngờ bị")
+    .replace(/một vấn đề sức khỏe bất thường/gi, "bệnh hoặc vấn đề cụ thể cần bác sĩ thú y kiểm tra thêm")
     .replace(/\s*,?\s*nhưng\s+không\s+chắc\s+chắn/gi, "")
     .replace(/\s*,?\s*nhưng\s+chưa\s+chắc\s+chắn/gi, "")
     .replace(/\bkhông\s+chắc\s+chắn\b/gi, "cần kiểm tra thêm")
