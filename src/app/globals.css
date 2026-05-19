@@ -403,16 +403,67 @@ h1 {
   margin: 0;
 }
 
+.quickResult strong {
+  color: #1f5e3d;
+  font-weight: 950;
+}
+
+.quickResult .quickLabel {
+  margin-bottom: 6px;
+  color: #8a5d00;
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.quickResult .quickLabel:not(:first-child) {
+  margin-top: 14px;
+}
+
 .quickResult .petThought {
   color: var(--charcoal);
   font-size: 1.08rem;
   font-weight: 900;
 }
 
-.resultCard h3 {
-  margin-bottom: 8px;
+.resultCard summary {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
   color: var(--charcoal);
   font-size: 1rem;
+  font-weight: 900;
+  cursor: pointer;
+  list-style: none;
+}
+
+.resultCard summary::-webkit-details-marker {
+  display: none;
+}
+
+.resultCard summary span {
+  color: var(--green);
+  font-size: 0.78rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.resultCard[open] summary {
+  margin-bottom: 8px;
+}
+
+.resultCard[open] summary span {
+  color: #8a5d00;
+}
+
+.resultCard[open] summary span::before {
+  content: "Ẩn";
+  font-size: 0.78rem;
+}
+
+.resultCard[open] summary span {
+  font-size: 0;
 }
 
 .resultCard ul {

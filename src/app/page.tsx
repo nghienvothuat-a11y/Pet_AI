@@ -283,10 +283,6 @@ function formatBytes(bytes: number) {
 
 function AnalysisResult({ analysis }: { analysis: PetHealthAnalysis }) {
   const concernText = getConcernText(analysis);
-  const observationText = analysis.observations.slice(0, 3).join(", ");
-  const looksNormal =
-    analysis.riskLevel === "low" &&
-    (!concernText || concernText.toLowerCase().includes("chưa thấy") || analysis.summary.toLowerCase().includes("bình thường"));
   const petThought = normalizePetThought(analysis.petThought);
 
   return (
@@ -294,33 +290,26 @@ function AnalysisResult({ analysis }: { analysis: PetHealthAnalysis }) {
       <div className="resultHeader">
         <div>
           <p className="eyebrow">Kết quả</p>
-          <h2>Tình trạng sơ bộ</h2>
+          <h2>Tóm tắt nhanh</h2>
         </div>
         <span className={`riskBadge ${riskClasses[analysis.riskLevel]}`}>{riskLabels[analysis.riskLevel]}</span>
       </div>
 
-      <div className="summaryCard">
-        <p className="cardLabel">{analysis.petTypeGuess}</p>
-        <p>{analysis.summary}</p>
-      </div>
-
       <div className="quickResult">
-        {looksNormal ? (
-          <p className="petThought">“{petThought}”</p>
-        ) : (
-          <p>
-            Nghi ngờ bị {concernText}. Lý do:{" "}
-            {observationText || "ảnh chưa đủ rõ để đánh giá"}.
-          </p>
-        )}
+        <p className="quickLabel">Dự đoán</p>
+        <p>
+          Nghi ngờ bị <strong>{concernText}</strong>.
+        </p>
+        <p className="quickLabel">Một chút tưởng tượng</p>
+        <p className="petThought">“{petThought}”</p>
       </div>
 
+      <InfoCard title="Tóm tắt" value={`${analysis.petTypeGuess}. ${analysis.summary}`} />
       <ResultList title="Quan sát thấy" items={analysis.observations} />
       <ResultList title="Điểm cần chú ý" items={analysis.possibleConcerns} emptyText="Chưa thấy dấu hiệu đáng lo rõ ràng." />
       <ResultList title="Nên làm tiếp" items={analysis.recommendedActions} />
       <InfoCard title="Lời khuyên thú y" value={analysis.vetCareAdvice} />
       <InfoCard title="Cảm xúc của bé" value={analysis.emotion} />
-      <InfoCard title="Một chút tưởng tượng" value={analysis.petThought} />
       <InfoCard title="Giới hạn" value={analysis.limitations} muted />
     </section>
   );
@@ -375,8 +364,8 @@ function hashText(text: string) {
 
 function ResultList({ title, items, emptyText = "Không có mục nào." }: { title: string; items: string[]; emptyText?: string }) {
   return (
-    <div className="resultCard">
-      <h3>{title}</h3>
+    <details className="resultCard">
+      <summary>{title}<span>Xem chi tiết</span></summary>
       {items.length > 0 ? (
         <ul>
           {items.map((item, index) => (
@@ -386,15 +375,15 @@ function ResultList({ title, items, emptyText = "Không có mục nào." }: { ti
       ) : (
         <p>{emptyText}</p>
       )}
-    </div>
+    </details>
   );
 }
 
 function InfoCard({ title, value, muted = false }: { title: string; value: string; muted?: boolean }) {
   return (
-    <div className={`resultCard ${muted ? "mutedCard" : ""}`}>
-      <h3>{title}</h3>
+    <details className={`resultCard ${muted ? "mutedCard" : ""}`}>
+      <summary>{title}<span>Xem chi tiết</span></summary>
       <p>{value}</p>
-    </div>
+    </details>
   );
 }

@@ -50,6 +50,7 @@ export default function App() {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [expandedResultCards, setExpandedResultCards] = useState<Record<string, boolean>>({});
   const cameraRef = useRef<Camera | null>(null);
   const selectedImageUri = !image || image.canceled ? null : image.assets?.[0]?.uri;
 
@@ -223,6 +224,7 @@ export default function App() {
     setError(null);
     setStatus("Đang gửi ảnh lên server...");
     setAnalysis(null);
+    setExpandedResultCards({});
 
     const asset = image.assets[0];
     const uri = asset.uri;
@@ -333,30 +335,64 @@ export default function App() {
           <View style={styles.resultsHeader}>
             <View>
               <Text style={styles.sectionEyebrow}>Kết quả</Text>
-              <Text style={styles.resultHeading}>Tình trạng sơ bộ</Text>
+              <Text style={styles.resultHeading}>Tóm tắt nhanh</Text>
             </View>
             <RiskChip riskLevel={analysis.riskLevel} />
           </View>
 
-          <View style={styles.summaryCard}>
-            <Text style={styles.cardLabel}>{analysis.petTypeGuess}</Text>
-            <Text style={styles.summaryText}>{analysis.summary}</Text>
-          </View>
-
           <View style={styles.quickResultCard}>
-            <Text style={styles.quickResultLabel}>Kết luận nhanh</Text>
+            <Text style={styles.quickResultLabel}>Dự đoán</Text>
             <Text style={styles.quickResultText}>
-              Nghi ngờ bị {getConcernText(analysis)}. Lý do: {getObservationText(analysis)}.
+              Nghi ngờ bị <Text style={styles.quickResultStrong}>{getConcernText(analysis)}</Text>.
             </Text>
+            <Text style={styles.petThoughtLabel}>Một chút tưởng tượng</Text>
+            <Text style={styles.petThoughtText}>“{analysis.petThought}”</Text>
           </View>
 
-          <ResultCard title="Quan sát thấy" items={analysis.observations} />
-          <ResultCard title="Điểm cần chú ý" items={analysis.possibleConcerns} emptyText="Chưa thấy dấu hiệu đáng lo rõ ràng." />
-          <ResultCard title="Nên làm tiếp" items={analysis.recommendedActions} />
-          <InfoCard title="Lời khuyên thú y" value={analysis.vetCareAdvice} />
-          <InfoCard title="Cảm xúc của bé" value={analysis.emotion} />
-          <InfoCard title="Một chút tưởng tượng" value={analysis.petThought} />
-          <InfoCard title="Giới hạn" value={analysis.limitations} muted />
+          <CollapsibleInfoCard
+            title="Tóm tắt"
+            value={`${analysis.petTypeGuess}. ${analysis.summary}`}
+            expanded={!!expandedResultCards.summary}
+            onToggle={() => setExpandedResultCards((cards) => ({ ...cards, summary: !cards.summary }))}
+          />
+          <CollapsibleResultCard
+            title="Quan sát thấy"
+            items={analysis.observations}
+            expanded={!!expandedResultCards.observations}
+            onToggle={() => setExpandedResultCards((cards) => ({ ...cards, observations: !cards.observations }))}
+          />
+          <CollapsibleResultCard
+            title="Điểm cần chú ý"
+            items={analysis.possibleConcerns}
+            emptyText="Chưa thấy dấu hiệu đáng lo rõ ràng."
+            expanded={!!expandedResultCards.concerns}
+            onToggle={() => setExpandedResultCards((cards) => ({ ...cards, concerns: !cards.concerns }))}
+          />
+          <CollapsibleResultCard
+            title="Nên làm tiếp"
+            items={analysis.recommendedActions}
+            expanded={!!expandedResultCards.actions}
+            onToggle={() => setExpandedResultCards((cards) => ({ ...cards, actions: !cards.actions }))}
+          />
+          <CollapsibleInfoCard
+            title="Lời khuyên thú y"
+            value={analysis.vetCareAdvice}
+            expanded={!!expandedResultCards.vetCare}
+            onToggle={() => setExpandedResultCards((cards) => ({ ...cards, vetCare: !cards.vetCare }))}
+          />
+          <CollapsibleInfoCard
+            title="Cảm xúc của bé"
+            value={analysis.emotion}
+            expanded={!!expandedResultCards.emotion}
+            onToggle={() => setExpandedResultCards((cards) => ({ ...cards, emotion: !cards.emotion }))}
+          />
+          <CollapsibleInfoCard
+            title="Giới hạn"
+            value={analysis.limitations}
+            expanded={!!expandedResultCards.limitations}
+            onToggle={() => setExpandedResultCards((cards) => ({ ...cards, limitations: !cards.limitations }))}
+            muted
+          />
         </View>
       ) : null}
 
@@ -493,28 +529,60 @@ function RiskChip({ riskLevel }: { riskLevel: string }) {
   );
 }
 
-function ResultCard({ title, items, emptyText = "Không có mục nào." }: { title: string; items: string[]; emptyText?: string }) {
+function CollapsibleResultCard({
+  title,
+  items,
+  expanded,
+  onToggle,
+  emptyText = "Không có mục nào."
+}: {
+  title: string;
+  items: string[];
+  expanded: boolean;
+  onToggle: () => void;
+  emptyText?: string;
+}) {
   return (
     <View style={styles.resultCard}>
-      <Text style={styles.resultLabel}>{title}</Text>
-      {items.length > 0 ? (
-        items.map((item, index) => (
-          <Text key={index} style={styles.resultValue}>
-            • {item}
-          </Text>
-        ))
-      ) : (
-        <Text style={styles.resultValue}>{emptyText}</Text>
-      )}
+      <TouchableOpacity style={styles.resultCardHeader} onPress={onToggle} activeOpacity={0.78}>
+        <Text style={styles.resultLabel}>{title}</Text>
+        <Text style={styles.resultToggle}>{expanded ? "Ẩn" : "Xem chi tiết"}</Text>
+      </TouchableOpacity>
+      {expanded ? (
+        items.length > 0 ? (
+          items.map((item, index) => (
+            <Text key={index} style={styles.resultValue}>
+              • {item}
+            </Text>
+          ))
+        ) : (
+          <Text style={styles.resultValue}>{emptyText}</Text>
+        )
+      ) : null}
     </View>
   );
 }
 
-function InfoCard({ title, value, muted = false }: { title: string; value: string; muted?: boolean }) {
+function CollapsibleInfoCard({
+  title,
+  value,
+  expanded,
+  onToggle,
+  muted = false
+}: {
+  title: string;
+  value: string;
+  expanded: boolean;
+  onToggle: () => void;
+  muted?: boolean;
+}) {
   return (
     <View style={[styles.resultCard, muted && styles.mutedCard]}>
-      <Text style={styles.resultLabel}>{title}</Text>
-      <Text style={styles.resultValue}>{value}</Text>
+      <TouchableOpacity style={styles.resultCardHeader} onPress={onToggle} activeOpacity={0.78}>
+        <Text style={styles.resultLabel}>{title}</Text>
+        <Text style={styles.resultToggle}>{expanded ? "Ẩn" : "Xem chi tiết"}</Text>
+      </TouchableOpacity>
+      {expanded ? <Text style={styles.resultValue}>{value}</Text> : null}
     </View>
   );
 }
@@ -1009,6 +1077,23 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     fontWeight: "800"
   },
+  quickResultStrong: {
+    fontWeight: "900",
+    color: "#1F5E3D"
+  },
+  petThoughtLabel: {
+    color: "#8A5D00",
+    fontSize: 13,
+    fontWeight: "900",
+    marginTop: 14,
+    marginBottom: 6
+  },
+  petThoughtText: {
+    color: "#26352B",
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: "900"
+  },
   resultCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 20,
@@ -1017,20 +1102,32 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#F1DFCC"
   },
+  resultCardHeader: {
+    minHeight: 32,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12
+  },
   mutedCard: {
     backgroundColor: "#FBF2E8"
   },
   resultLabel: {
     fontWeight: "900",
     color: "#26352B",
-    marginBottom: 8,
-    fontSize: 15
+    fontSize: 15,
+    flex: 1
+  },
+  resultToggle: {
+    color: "#2F8F62",
+    fontSize: 12,
+    fontWeight: "900"
   },
   resultValue: {
     color: "#545D52",
     lineHeight: 22,
     fontSize: 14,
-    marginBottom: 4
+    marginTop: 8
   },
   safetyNote: {
     color: "#74695C",
