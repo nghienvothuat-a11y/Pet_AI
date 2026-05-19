@@ -75,6 +75,24 @@ target 'PetAIMobile' do
         end
       end
     end
+
+    bitcode_strip = `xcrun --find bitcode_strip`.strip
+    hermes_binary = File.join(
+      __dir__,
+      'Pods',
+      'hermes-engine',
+      'destroot',
+      'Library',
+      'Frameworks',
+      'universal',
+      'hermes.xcframework',
+      'ios-arm64',
+      'hermes.framework',
+      'hermes'
+    )
+    if File.exist?(bitcode_strip) && File.exist?(hermes_binary)
+      system(bitcode_strip, hermes_binary, '-r', '-o', hermes_binary)
+    end
   end
 
   post_integrate do |installer|
