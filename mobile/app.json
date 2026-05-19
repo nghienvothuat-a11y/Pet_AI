@@ -10,7 +10,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.phamduckien.petai",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
         "NSCameraUsageDescription": "Pet_AI cần quyền camera để chụp ảnh thú cưng trước khi phân tích.",
         "NSPhotoLibraryUsageDescription": "Pet_AI cần quyền thư viện ảnh để chọn ảnh thú cưng trước khi phân tích.",

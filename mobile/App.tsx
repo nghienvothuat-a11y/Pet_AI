@@ -14,6 +14,7 @@ import {
   View
 } from "react-native";
 import Constants from "expo-constants";
+import { Camera, CameraType } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 
 const configuredApiUrl = Constants.expoConfig?.extra?.apiUrl;
@@ -46,10 +47,55 @@ export default function App() {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isCameraReady, setIsCameraReady] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const cameraRef = useRef<Camera | null>(null);
   const selectedImageUri = !image || image.canceled ? null : image.assets?.[0]?.uri;
 
   if (!isAppReady) {
     return <LoadingScreen onFinish={() => setIsAppReady(true)} />;
+  }
+
+  if (isCameraOpen) {
+    return (
+      <View style={styles.cameraScreen}>
+        <Camera
+          ref={cameraRef}
+          style={styles.cameraPreview}
+          type={CameraType.back}
+          ratio="4:3"
+          onCameraReady={() => setIsCameraReady(true)}
+        >
+          <View style={styles.cameraTopBar}>
+            <TouchableOpacity
+              style={styles.cameraCloseButton}
+              onPress={() => {
+                setIsCameraOpen(false);
+                setIsCameraReady(false);
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.cameraCloseText}>Đóng</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.cameraBottomBar}>
+            <Text style={styles.cameraHint}>Đưa mặt hoặc vùng cần kiểm tra của bé vào giữa khung</Text>
+            <TouchableOpacity
+              style={[styles.captureButton, (!isCameraReady || isCapturing) && styles.captureButtonDisabled]}
+              onPress={capturePhoto}
+              disabled={!isCameraReady || isCapturing}
+              activeOpacity={0.85}
+            >
+              <View style={styles.captureButtonInner}>
+                {isCapturing ? <ActivityIndicator color="#2F8F62" /> : null}
+              </View>
+            </TouchableOpacity>
+          </View>
+        </Camera>
+      </View>
+    );
   }
 
   async function requestLibraryPermission() {
@@ -67,8 +113,8 @@ export default function App() {
   }
 
   async function requestCameraPermission() {
-    const cameraAvailable = await ImagePicker.getCameraPermissionsAsync();
-    const cameraPermission = cameraAvailable.granted ? cameraAvailable : await ImagePicker.requestCameraPermissionsAsync();
+    const cameraAvailable = await Camera.getCameraPermissionsAsync();
+    const cameraPermission = cameraAvailable.granted ? cameraAvailable : await Camera.requestCameraPermissionsAsync();
 
     if (!cameraPermission.granted) {
       Alert.alert(
@@ -111,7 +157,7 @@ export default function App() {
   }
 
   async function takePhoto() {
-    const cameraPermissionStatus = await ImagePicker.getCameraPermissionsAsync();
+    const cameraPermissionStatus = await Camera.getCameraPermissionsAsync();
     if (Platform.OS === "ios" && !cameraPermissionStatus.canAskAgain && !cameraPermissionStatus.granted) {
       Alert.alert("Không thể mở camera", "Hãy cấp quyền camera trong Settings rồi thử lại.");
       return;
@@ -122,30 +168,48 @@ export default function App() {
       return;
     }
 
-    let result: ImagePicker.ImagePickerResult;
+    setError(null);
+    setStatus(null);
+    setIsCameraReady(false);
+    setIsCameraOpen(true);
+  }
 
-    try {
-      result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.8
-      });
-    } catch (cameraError) {
-      Alert.alert(
-        "Không thể mở camera",
-        Platform.OS === "ios"
-          ? "iOS Simulator thường không hỗ trợ camera. Hãy dùng Chọn ảnh để test trên simulator, hoặc chạy trên iPhone thật để chụp ảnh."
-          : cameraError instanceof Error
-            ? cameraError.message
-            : "Vui lòng thử lại."
-      );
+  async function capturePhoto() {
+    if (!cameraRef.current || isCapturing) {
       return;
     }
 
-    if (!result.canceled) {
-      setImage(result as ImagePicker.ImagePickerResult);
+    setIsCapturing(true);
+
+    try {
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.82,
+        skipProcessing: false
+      });
+      setImage({
+        canceled: false,
+        assets: [
+          {
+            uri: photo.uri,
+            width: photo.width,
+            height: photo.height,
+            type: "image",
+            fileName: "pet-camera.jpg"
+          }
+        ]
+      } as ImagePicker.ImagePickerResult);
       setAnalysis(null);
       setError(null);
       setStatus(null);
+      setIsCameraOpen(false);
+      setIsCameraReady(false);
+    } catch (cameraError) {
+      Alert.alert(
+        "Không thể chụp ảnh",
+        cameraError instanceof Error ? cameraError.message : "Vui lòng thử lại."
+      );
+    } finally {
+      setIsCapturing(false);
     }
   }
 
@@ -486,6 +550,69 @@ function getRiskTone(riskLevel: string) {
 }
 
 const styles = StyleSheet.create({
+  cameraScreen: {
+    flex: 1,
+    backgroundColor: "#121812"
+  },
+  cameraPreview: {
+    flex: 1,
+    justifyContent: "space-between"
+  },
+  cameraTopBar: {
+    paddingTop: 58,
+    paddingHorizontal: 18,
+    alignItems: "flex-start"
+  },
+  cameraCloseButton: {
+    minHeight: 42,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    backgroundColor: "rgba(255, 248, 239, 0.94)",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  cameraCloseText: {
+    color: "#26352B",
+    fontWeight: "900",
+    fontSize: 14
+  },
+  cameraBottomBar: {
+    paddingHorizontal: 22,
+    paddingBottom: 38,
+    alignItems: "center"
+  },
+  cameraHint: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: "800",
+    textAlign: "center",
+    marginBottom: 18,
+    textShadowColor: "rgba(0, 0, 0, 0.34)",
+    textShadowRadius: 6,
+    textShadowOffset: { width: 0, height: 2 }
+  },
+  captureButton: {
+    width: 78,
+    height: 78,
+    borderRadius: 39,
+    backgroundColor: "rgba(255, 255, 255, 0.38)",
+    borderWidth: 3,
+    borderColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  captureButtonDisabled: {
+    opacity: 0.62
+  },
+  captureButtonInner: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center"
+  },
   loadingScreen: {
     flex: 1,
     backgroundColor: "#FFF8EF",
