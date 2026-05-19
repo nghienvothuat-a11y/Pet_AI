@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Pet_AI",
+  title: "BossCare",
   description: "Sàng lọc sức khỏe sơ bộ cho chó và mèo bằng ảnh."
 };
 

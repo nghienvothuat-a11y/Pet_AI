@@ -58,6 +58,7 @@ p {
 
 .hero {
   display: flex;
+  flex-wrap: wrap;
   gap: 14px;
   align-items: center;
   margin-bottom: 22px;
@@ -107,6 +108,26 @@ h1 {
   color: #5e665d;
   font-size: 0.96rem;
   line-height: 1.45;
+}
+
+.languageSelect {
+  display: grid;
+  gap: 6px;
+  min-width: 150px;
+  margin-left: auto;
+  color: #5e665d;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.languageSelect select {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--charcoal);
+  font: inherit;
+  padding: 0 12px;
 }
 
 .capturePanel {
@@ -455,15 +476,6 @@ h1 {
 
 .resultCard[open] summary span {
   color: #8a5d00;
-}
-
-.resultCard[open] summary span::before {
-  content: "Ẩn";
-  font-size: 0.78rem;
-}
-
-.resultCard[open] summary span {
-  font-size: 0;
 }
 
 .resultCard ul {

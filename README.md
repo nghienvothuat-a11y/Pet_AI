@@ -1,6 +1,6 @@
-# Pet_AI
+# BossCare
 
-Pet_AI là ứng dụng web mobile-first cho phép người dùng chụp hoặc tải ảnh chó/mèo lên để AI phân tích sơ bộ tình trạng sức khỏe.
+BossCare là ứng dụng web mobile-first cho phép người dùng chụp hoặc tải ảnh chó/mèo lên để AI phân tích sơ bộ tình trạng sức khỏe.
 
 Ứng dụng trả lời bằng tiếng Việt theo hướng thận trọng:
 
@@ -120,7 +120,7 @@ test/petAnalysis.test.mjs     # test cho parse/extract helper
 
 ## Nguyên tắc an toàn
 
-Pet_AI chỉ là công cụ hỗ trợ sàng lọc sơ bộ.
+BossCare chỉ là công cụ hỗ trợ sàng lọc sơ bộ.
 
 Ứng dụng không:
 

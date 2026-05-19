@@ -1,6 +1,6 @@
-# Pet_AI Mobile (Expo)
+# BossCare Mobile (Expo)
 
-Ứng dụng mobile React Native/Expo cho project `Pet_AI`.
+Ứng dụng mobile React Native/Expo cho project `BossCare`.
 
 ## Mục đích
 
@@ -19,7 +19,7 @@ npm install
 
 ### Chạy backend Next.js ở project gốc
 
-Trong thư mục gốc `Pet_AI`:
+Trong thư mục gốc `BossCare`:
 
 ```bash
 npm run dev

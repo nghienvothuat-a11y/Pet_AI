@@ -11,7 +11,9 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>$(PRODUCT_NAME)</string>
+	<string>BossCare</string>
+	<key>CFBundleDisplayName</key>
+	<string>BossCare</string>
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleSignature</key>
@@ -19,7 +21,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>3</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>
@@ -36,11 +38,11 @@
 		</dict>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Pet_AI cần quyền camera để chụp ảnh thú cưng trước khi phân tích.</string>
+	<string>BossCare cần quyền camera để chụp ảnh thú cưng trước khi phân tích.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Pet_AI cần quyền thư viện ảnh để chọn ảnh thú cưng trước khi phân tích.</string>
+	<string>BossCare cần quyền thư viện ảnh để chọn ảnh thú cưng trước khi phân tích.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Pet_AI cần quyền lưu ảnh khi bạn muốn lưu ảnh từ ứng dụng.</string>
+	<string>BossCare cần quyền lưu ảnh khi bạn muốn lưu ảnh từ ứng dụng.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>SplashScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>

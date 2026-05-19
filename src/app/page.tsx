@@ -14,12 +14,108 @@ type AnalyzeResponse = {
   error?: string;
 };
 
-const riskLabels: Record<RiskLevel, string> = {
-  low: "Thấp",
-  medium: "Trung bình",
-  high: "Cao",
-  urgent: "Cần gặp bác sĩ ngay",
-  unknown: "Chưa rõ"
+type AppLanguage = "en" | "vi";
+
+const uiText = {
+  en: {
+    languageLabel: "Language",
+    heroEyebrow: "Pet health check",
+    heroCopy: "Quickly check your pet's health from a clear photo and symptoms you noticed.",
+    addPhoto: "Add your pet photo",
+    addPhotoHint: "A clear photo of the face, eyes, skin, or unusual fur area helps improve the result.",
+    takePhoto: "Take photo",
+    choosePhoto: "Choose photo",
+    symptomsPlaceholder: "Enter symptoms so AI can analyze more accurately",
+    selected: "Selected",
+    uploadImage: "Image to upload",
+    analyze: "Analyze health",
+    analyzing: "Analyzing...",
+    changePhoto: "Change photo",
+    safety: "Results are preliminary screening only and do not replace a veterinarian's diagnosis.",
+    uploadStatus: "Uploading image to server...",
+    analyzingStatus: "AI is analyzing the image. This may take 10-30 seconds.",
+    doneStatus: "Analysis complete. Results are below.",
+    chooseError: "Please take or choose a photo first.",
+    invalidImage: "Please choose an image file.",
+    compressionError: "Could not compress the image automatically. If analysis fails, try a smaller JPG/PNG.",
+    ready: "Ready to analyze",
+    result: "Result",
+    quickSummary: "Quick summary",
+    prediction: "Prediction",
+    suspected: "Suspected",
+    petThought: "A little imagination",
+    combinedSummary: "Short summary",
+    limitations: "Limitations",
+    showDetails: "Show details",
+    hide: "Hide",
+    noClearConcern: "no clear concerning signs",
+    unclearObservation: "the image is not clear enough for detailed observations",
+    followUp: "keep monitoring",
+    mainObservation: "Main observation",
+    concernPoint: "Point to watch",
+    nextStep: "Next step",
+    vetAdvice: "Vet advice",
+    petEmotion: "Pet emotion",
+    risk: {
+      low: "Low",
+      medium: "Medium",
+      high: "High",
+      urgent: "See a vet now",
+      unknown: "Unknown"
+    }
+  },
+  vi: {
+    languageLabel: "Ngôn ngữ",
+    heroEyebrow: "Pet health check",
+    heroCopy: "Kiểm tra nhanh sức khỏe bé cưng từ ảnh rõ nét và triệu chứng bạn quan sát được.",
+    addPhoto: "Thêm ảnh bé cưng",
+    addPhotoHint: "Ảnh rõ mặt, mắt, da hoặc vùng lông bất thường sẽ giúp kết quả tốt hơn.",
+    takePhoto: "Chụp ảnh",
+    choosePhoto: "Chọn ảnh",
+    symptomsPlaceholder: "Nhập thông tin triệu chứng để AI phân tích chính xác hơn",
+    selected: "Đã chọn",
+    uploadImage: "Ảnh gửi đi",
+    analyze: "Phân tích sức khỏe",
+    analyzing: "Đang phân tích...",
+    changePhoto: "Đổi ảnh",
+    safety: "Kết quả chỉ là sàng lọc sơ bộ và không thay thế chẩn đoán của bác sĩ thú y.",
+    uploadStatus: "Đang gửi ảnh lên server...",
+    analyzingStatus: "AI đang phân tích ảnh. Bước này có thể mất 10-30 giây.",
+    doneStatus: "Đã phân tích xong. Kết quả nằm bên dưới.",
+    chooseError: "Vui lòng chụp hoặc chọn ảnh trước.",
+    invalidImage: "Vui lòng chọn một file ảnh.",
+    compressionError: "Không thể nén ảnh tự động. Nếu phân tích lỗi, hãy thử chọn ảnh JPG/PNG nhỏ hơn.",
+    ready: "Sẵn sàng phân tích",
+    result: "Kết quả",
+    quickSummary: "Tóm tắt nhanh",
+    prediction: "Dự đoán",
+    suspected: "Nghi ngờ bị",
+    petThought: "Một chút tưởng tượng",
+    combinedSummary: "Tổng hợp ngắn",
+    limitations: "Giới hạn",
+    showDetails: "Xem chi tiết",
+    hide: "Ẩn",
+    noClearConcern: "chưa thấy dấu hiệu đáng lo rõ ràng",
+    unclearObservation: "ảnh chưa đủ rõ để quan sát chi tiết",
+    followUp: "tiếp tục theo dõi thêm",
+    mainObservation: "Quan sát chính",
+    concernPoint: "Điểm cần chú ý",
+    nextStep: "Nên làm tiếp",
+    vetAdvice: "Lời khuyên thú y",
+    petEmotion: "Cảm xúc của bé",
+    risk: {
+      low: "Thấp",
+      medium: "Trung bình",
+      high: "Cao",
+      urgent: "Cần gặp bác sĩ ngay",
+      unknown: "Chưa rõ"
+    }
+  }
+} satisfies Record<AppLanguage, Record<string, unknown>>;
+
+const riskLabels: Record<AppLanguage, Record<RiskLevel, string>> = {
+  en: uiText.en.risk,
+  vi: uiText.vi.risk
 };
 
 const riskClasses: Record<RiskLevel, string> = {
@@ -31,6 +127,7 @@ const riskClasses: Record<RiskLevel, string> = {
 };
 
 export default function Home() {
+  const [language, setLanguage] = useState<AppLanguage>("en");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [originalFileName, setOriginalFileName] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -40,6 +137,7 @@ export default function Home() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
+  const text = uiText[language];
 
   const canSubmit = useMemo(() => Boolean(imageFile) && !isLoading, [imageFile, isLoading]);
 
@@ -62,7 +160,7 @@ export default function Home() {
     }
 
     if (!file.type.startsWith("image/")) {
-      setError("Vui lòng chọn một file ảnh.");
+      setError(text.invalidImage);
       return;
     }
 
@@ -84,7 +182,7 @@ export default function Home() {
       setImageFile(await normalizeImageForUpload(file));
     } catch {
       setImageFile(file);
-      setError("Không thể nén ảnh tự động. Nếu phân tích lỗi, hãy thử chọn ảnh JPG/PNG nhỏ hơn.");
+      setError(text.compressionError);
     }
   }
 
@@ -92,21 +190,22 @@ export default function Home() {
     event.preventDefault();
 
     if (!imageFile) {
-      setError("Vui lòng chụp hoặc chọn ảnh trước.");
+      setError(text.chooseError);
       return;
     }
 
     setIsLoading(true);
     setError(null);
-    setStatusMessage("Đang gửi ảnh lên server...");
+    setStatusMessage(text.uploadStatus);
     setAnalysis(null);
 
     const formData = new FormData();
     formData.append("image", imageFile);
     formData.append("symptoms", symptoms.trim());
+    formData.append("language", language);
 
     try {
-      setStatusMessage("AI đang phân tích ảnh. Bước này có thể mất 10-30 giây.");
+      setStatusMessage(text.analyzingStatus);
       const response = await fetch("/api/analyze", {
         method: "POST",
         body: formData
@@ -118,7 +217,7 @@ export default function Home() {
       }
 
       setAnalysis(data.analysis);
-      setStatusMessage("Đã phân tích xong. Kết quả nằm bên dưới.");
+      setStatusMessage(text.doneStatus);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Đã có lỗi xảy ra.");
       setStatusMessage(null);
@@ -141,13 +240,20 @@ export default function Home() {
       <section className="hero">
         <div className="brandMark">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-ai-paw.png" alt="Pet_AI logo" />
+          <img src="/logo-ai-paw.png" alt="BossCare logo" />
         </div>
         <div className="heroCopy">
-          <p className="eyebrow">Pet health check</p>
-          <h1>Pet_AI</h1>
-          <p>Kiểm tra nhanh sức khỏe bé cưng từ ảnh rõ nét và triệu chứng bạn quan sát được.</p>
+          <p className="eyebrow">{text.heroEyebrow}</p>
+          <h1>BossCare</h1>
+          <p>{text.heroCopy}</p>
         </div>
+        <label className="languageSelect">
+          <span>{text.languageLabel}</span>
+          <select value={language} onChange={(event) => setLanguage(event.target.value as AppLanguage)}>
+            <option value="en">English</option>
+            <option value="vi">Tiếng Việt</option>
+          </select>
+        </label>
       </section>
 
       <form className="capturePanel" onSubmit={handleSubmit}>
@@ -155,15 +261,15 @@ export default function Home() {
           {previewUrl ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={previewUrl} alt="Ảnh thú cưng đã chọn" />
-              <span className="readyBadge">Sẵn sàng phân tích</span>
+              <img src={previewUrl} alt="Selected pet" />
+              <span className="readyBadge">{text.ready}</span>
             </>
           ) : (
             <label className="emptyPreview">
-              <input type="file" accept="image/*" onChange={handleFileChange} aria-label="Chọn ảnh thú cưng" />
+              <input type="file" accept="image/*" onChange={handleFileChange} aria-label={text.choosePhoto} />
               <span className="emptyIcon">+</span>
-              <strong>Thêm ảnh bé cưng</strong>
-              <span>Ảnh rõ mặt, mắt, da hoặc vùng lông bất thường sẽ giúp kết quả tốt hơn.</span>
+              <strong>{text.addPhoto}</strong>
+              <span>{text.addPhotoHint}</span>
             </label>
           )}
         </div>
@@ -171,19 +277,19 @@ export default function Home() {
         <div className="buttonRow">
           <label className="secondaryButton filePicker">
             <span className="buttonIcon">CA</span>
-            <span>Chụp ảnh</span>
+            <span>{text.takePhoto}</span>
             <input
               type="file"
               accept="image/*"
               capture="environment"
               onChange={handleFileChange}
-              aria-label="Chụp ảnh thú cưng"
+              aria-label={text.takePhoto}
             />
           </label>
           <label className="secondaryButton filePicker">
             <span className="buttonIcon">PH</span>
-            <span>Chọn ảnh</span>
-            <input type="file" accept="image/*" onChange={handleFileChange} aria-label="Chọn ảnh thú cưng" />
+            <span>{text.choosePhoto}</span>
+            <input type="file" accept="image/*" onChange={handleFileChange} aria-label={text.choosePhoto} />
           </label>
         </div>
 
@@ -191,36 +297,36 @@ export default function Home() {
           className="symptomsInput"
           value={symptoms}
           onChange={(event) => setSymptoms(event.target.value)}
-          placeholder="Nhập thông tin triệu chứng để AI phân tích chính xác hơn"
+          placeholder={text.symptomsPlaceholder}
           maxLength={500}
           disabled={isLoading}
         />
 
         {imageFile ? (
           <p className="fileMeta">
-            Đã chọn: {originalFileName || imageFile.name} · Ảnh gửi đi: {formatBytes(imageFile.size)}
+            {text.selected}: {originalFileName || imageFile.name} · {text.uploadImage}: {formatBytes(imageFile.size)}
           </p>
         ) : null}
 
         <div className="actionRow">
           <button type="submit" className="primaryButton" disabled={!canSubmit}>
-            {isLoading ? "Đang phân tích..." : "Phân tích sức khỏe"}
+            {isLoading ? text.analyzing : text.analyze}
           </button>
           {imageFile ? (
             <button type="button" className="textButton" onClick={clearImage} disabled={isLoading}>
-              Đổi ảnh
+              {text.changePhoto}
             </button>
           ) : null}
         </div>
 
         <p className="safetyNote">
-          Kết quả chỉ là sàng lọc sơ bộ và không thay thế chẩn đoán của bác sĩ thú y.
+          {text.safety}
         </p>
       </form>
 
       {statusMessage ? <div className="statusBox">{statusMessage}</div> : null}
       {error ? <div className="alert">{error}</div> : null}
-      <div ref={resultRef}>{analysis ? <AnalysisResult analysis={analysis} /> : null}</div>
+      <div ref={resultRef}>{analysis ? <AnalysisResult analysis={analysis} language={language} /> : null}</div>
     </main>
   );
 }
@@ -281,36 +387,32 @@ function formatBytes(bytes: number) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function AnalysisResult({ analysis }: { analysis: PetHealthAnalysis }) {
+function AnalysisResult({ analysis, language }: { analysis: PetHealthAnalysis; language: AppLanguage }) {
+  const text = uiText[language];
   const concernText = getConcernText(analysis);
-  const petThought = normalizePetThought(analysis.petThought);
+  const petThought = normalizePetThought(analysis.petThought, language);
 
   return (
     <section className="resultPanel" aria-live="polite">
       <div className="resultHeader">
         <div>
-          <p className="eyebrow">Kết quả</p>
-          <h2>Tóm tắt nhanh</h2>
+          <p className="eyebrow">{text.result}</p>
+          <h2>{text.quickSummary}</h2>
         </div>
-        <span className={`riskBadge ${riskClasses[analysis.riskLevel]}`}>{riskLabels[analysis.riskLevel]}</span>
+        <span className={`riskBadge ${riskClasses[analysis.riskLevel]}`}>{riskLabels[language][analysis.riskLevel]}</span>
       </div>
 
       <div className="quickResult">
-        <p className="quickLabel">Dự đoán</p>
+        <p className="quickLabel">{text.prediction}</p>
         <p>
-          Nghi ngờ bị <strong>{concernText}</strong>.
+          {text.suspected} <strong>{concernText}</strong>.
         </p>
-        <p className="quickLabel">Một chút tưởng tượng</p>
+        <p className="quickLabel">{text.petThought}</p>
         <p className="petThought">“{petThought}”</p>
       </div>
 
-      <InfoCard title="Tóm tắt" value={`${analysis.petTypeGuess}. ${analysis.summary}`} />
-      <ResultList title="Quan sát thấy" items={analysis.observations} />
-      <ResultList title="Điểm cần chú ý" items={analysis.possibleConcerns} emptyText="Chưa thấy dấu hiệu đáng lo rõ ràng." />
-      <ResultList title="Nên làm tiếp" items={analysis.recommendedActions} />
-      <InfoCard title="Lời khuyên thú y" value={analysis.vetCareAdvice} />
-      <InfoCard title="Cảm xúc của bé" value={analysis.emotion} />
-      <InfoCard title="Giới hạn" value={analysis.limitations} muted />
+      <InfoCard title={text.combinedSummary} value={getShortCombinedSummary(analysis, language)} text={text} />
+      <InfoCard title={text.limitations} value={analysis.limitations} text={text} muted />
     </section>
   );
 }
@@ -340,8 +442,25 @@ function stripLeadingConcernPhrase(text: string) {
     .trim();
 }
 
-function normalizePetThought(petThought: string) {
+function getShortCombinedSummary(analysis: PetHealthAnalysis, language: AppLanguage) {
+  const text = uiText[language];
+  const observations = analysis.observations.slice(0, 2).join(", ") || text.unclearObservation;
+  const concerns =
+    analysis.possibleConcerns
+      .filter((concern) => !concern.toLowerCase().includes("chưa thấy"))
+      .slice(0, 2)
+      .join(", ") || text.noClearConcern;
+  const actions = analysis.recommendedActions.slice(0, 2).join(", ") || text.followUp;
+
+  return `${analysis.summary} ${text.mainObservation}: ${observations}. ${text.concernPoint}: ${concerns}. ${text.nextStep}: ${actions}. ${text.vetAdvice}: ${analysis.vetCareAdvice} ${text.petEmotion}: ${analysis.emotion}.`;
+}
+
+function normalizePetThought(petThought: string, language: AppLanguage) {
   const cleanThought = petThought.trim();
+
+  if (language === "en") {
+    return cleanThought;
+  }
 
   if (NORMAL_PET_THOUGHTS.includes(cleanThought as (typeof NORMAL_PET_THOUGHTS)[number])) {
     return cleanThought;
@@ -362,27 +481,20 @@ function hashText(text: string) {
 }
 
 
-function ResultList({ title, items, emptyText = "Không có mục nào." }: { title: string; items: string[]; emptyText?: string }) {
-  return (
-    <details className="resultCard">
-      <summary>{title}<span>Xem chi tiết</span></summary>
-      {items.length > 0 ? (
-        <ul>
-          {items.map((item, index) => (
-            <li key={`${title}-${index}`}>{item}</li>
-          ))}
-        </ul>
-      ) : (
-        <p>{emptyText}</p>
-      )}
-    </details>
-  );
-}
-
-function InfoCard({ title, value, muted = false }: { title: string; value: string; muted?: boolean }) {
+function InfoCard({
+  title,
+  value,
+  text,
+  muted = false
+}: {
+  title: string;
+  value: string;
+  text: (typeof uiText)[AppLanguage];
+  muted?: boolean;
+}) {
   return (
     <details className={`resultCard ${muted ? "mutedCard" : ""}`}>
-      <summary>{title}<span>Xem chi tiết</span></summary>
+      <summary>{title}<span>{text.showDetails}</span></summary>
       <p>{value}</p>
     </details>
   );

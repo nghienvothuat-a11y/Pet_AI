@@ -26,6 +26,103 @@ const API_URL =
       : "http://localhost:3000/api/analyze";
 const APP_LOGO = require("./assets/logo-ai-paw.png");
 
+type AppLanguage = "en" | "vi";
+
+const uiText = {
+  en: {
+    language: "Language",
+    heroEyebrow: "Pet health check",
+    heroTitle: "BossCare",
+    heroSubtitle: "Quickly check your pet's health from a clear photo.",
+    addPhoto: "Add your pet photo",
+    addPhotoHint: "A clear photo of the face, eyes, skin, or unusual fur area helps improve the result.",
+    takePhoto: "Take photo",
+    choosePhoto: "Choose photo",
+    symptomsPlaceholder: "Enter symptoms so AI can analyze more accurately",
+    analyze: "Analyze health",
+    analyzing: "Analyzing...",
+    uploadStatus: "Uploading image to server...",
+    analyzingStatus: "AI is analyzing the image. Please wait...",
+    doneStatus: "Analysis complete.",
+    chooseImageError: "Please choose or take a photo first.",
+    deniedTitle: "Permission denied",
+    libraryDenied: "The app needs photo library access to choose a pet photo.",
+    cameraDenied: "The app needs camera access to take a pet photo.",
+    cameraSettingsTitle: "Cannot open camera",
+    cameraSettings: "Please allow camera permission in Settings and try again.",
+    pickerErrorTitle: "Cannot open photo library",
+    captureErrorTitle: "Cannot take photo",
+    tryAgain: "Please try again.",
+    close: "Close",
+    cameraHint: "Place your pet's face or the area to check in the center",
+    ready: "Ready to analyze",
+    result: "Result",
+    quickSummary: "Quick summary",
+    prediction: "Prediction",
+    suspected: "Suspected",
+    petThought: "A little imagination",
+    combinedSummary: "Short summary",
+    limitations: "Limitations",
+    showDetails: "Show details",
+    hide: "Hide",
+    noClearConcern: "no clear concerning signs",
+    unclearObservation: "the image is not clear enough for detailed observations",
+    followUp: "keep monitoring",
+    mainObservation: "Main observation",
+    concernPoint: "Point to watch",
+    nextStep: "Next step",
+    vetAdvice: "Vet advice",
+    petEmotion: "Pet emotion",
+    safety: "BossCare is only preliminary screening. If your pet has breathing trouble, bleeding, seizures, prolonged appetite loss, or severe pain, see a veterinarian immediately."
+  },
+  vi: {
+    language: "Ngôn ngữ",
+    heroEyebrow: "Pet health check",
+    heroTitle: "BossCare",
+    heroSubtitle: "Kiểm tra nhanh sức khỏe bé cưng từ một bức ảnh rõ nét.",
+    addPhoto: "Thêm ảnh bé cưng",
+    addPhotoHint: "Ảnh rõ mặt, mắt, da hoặc vùng lông bất thường sẽ giúp kết quả tốt hơn.",
+    takePhoto: "Chụp ảnh",
+    choosePhoto: "Chọn ảnh",
+    symptomsPlaceholder: "Nhập thông tin triệu chứng để AI phân tích chính xác hơn",
+    analyze: "Phân tích sức khỏe",
+    analyzing: "Đang phân tích...",
+    uploadStatus: "Đang gửi ảnh lên server...",
+    analyzingStatus: "AI đang phân tích ảnh. Vui lòng đợi...",
+    doneStatus: "Phân tích hoàn tất.",
+    chooseImageError: "Vui lòng chọn hoặc chụp một ảnh trước.",
+    deniedTitle: "Quyền truy cập bị từ chối",
+    libraryDenied: "Ứng dụng cần quyền truy cập thư viện ảnh để chọn ảnh thú cưng.",
+    cameraDenied: "Ứng dụng cần quyền truy cập camera để chụp ảnh thú cưng.",
+    cameraSettingsTitle: "Không thể mở camera",
+    cameraSettings: "Hãy cấp quyền camera trong Settings rồi thử lại.",
+    pickerErrorTitle: "Không thể mở thư viện ảnh",
+    captureErrorTitle: "Không thể chụp ảnh",
+    tryAgain: "Vui lòng thử lại.",
+    close: "Đóng",
+    cameraHint: "Đưa mặt hoặc vùng cần kiểm tra của bé vào giữa khung",
+    ready: "Sẵn sàng phân tích",
+    result: "Kết quả",
+    quickSummary: "Tóm tắt nhanh",
+    prediction: "Dự đoán",
+    suspected: "Nghi ngờ bị",
+    petThought: "Một chút tưởng tượng",
+    combinedSummary: "Tổng hợp ngắn",
+    limitations: "Giới hạn",
+    showDetails: "Xem chi tiết",
+    hide: "Ẩn",
+    noClearConcern: "chưa thấy dấu hiệu đáng lo rõ ràng",
+    unclearObservation: "ảnh chưa đủ rõ để quan sát chi tiết",
+    followUp: "tiếp tục theo dõi thêm",
+    mainObservation: "Quan sát chính",
+    concernPoint: "Điểm cần chú ý",
+    nextStep: "Nên làm tiếp",
+    vetAdvice: "Lời khuyên thú y",
+    petEmotion: "Cảm xúc của bé",
+    safety: "BossCare chỉ hỗ trợ sàng lọc ban đầu. Nếu bé khó thở, chảy máu, co giật, bỏ ăn kéo dài hoặc đau nhiều, hãy đưa bé đến bác sĩ thú y ngay."
+  }
+};
+
 type HealthAnalysis = {
   petTypeGuess: string;
   summary: string;
@@ -40,6 +137,7 @@ type HealthAnalysis = {
 };
 
 export default function App() {
+  const [language, setLanguage] = useState<AppLanguage>("en");
   const [isAppReady, setIsAppReady] = useState(false);
   const [image, setImage] = useState<ImagePicker.ImagePickerResult | null>(null);
   const [analysis, setAnalysis] = useState<HealthAnalysis | null>(null);
@@ -53,6 +151,7 @@ export default function App() {
   const [expandedResultCards, setExpandedResultCards] = useState<Record<string, boolean>>({});
   const cameraRef = useRef<Camera | null>(null);
   const selectedImageUri = !image || image.canceled ? null : image.assets?.[0]?.uri;
+  const text = uiText[language];
 
   if (!isAppReady) {
     return <LoadingScreen onFinish={() => setIsAppReady(true)} />;
@@ -77,12 +176,12 @@ export default function App() {
               }}
               activeOpacity={0.85}
             >
-              <Text style={styles.cameraCloseText}>Đóng</Text>
+              <Text style={styles.cameraCloseText}>{text.close}</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.cameraBottomBar}>
-            <Text style={styles.cameraHint}>Đưa mặt hoặc vùng cần kiểm tra của bé vào giữa khung</Text>
+            <Text style={styles.cameraHint}>{text.cameraHint}</Text>
             <TouchableOpacity
               style={[styles.captureButton, (!isCameraReady || isCapturing) && styles.captureButtonDisabled]}
               onPress={capturePhoto}
@@ -104,8 +203,8 @@ export default function App() {
 
     if (!libraryPermission.granted) {
       Alert.alert(
-        "Quyền truy cập bị từ chối",
-        "Ứng dụng cần quyền truy cập thư viện ảnh để chọn ảnh thú cưng."
+        text.deniedTitle,
+        text.libraryDenied
       );
       return false;
     }
@@ -119,8 +218,8 @@ export default function App() {
 
     if (!cameraPermission.granted) {
       Alert.alert(
-        "Quyền truy cập bị từ chối",
-        "Ứng dụng cần quyền truy cập camera để chụp ảnh thú cưng."
+        text.deniedTitle,
+        text.cameraDenied
       );
       return false;
     }
@@ -143,8 +242,8 @@ export default function App() {
       });
     } catch (pickerError) {
       Alert.alert(
-        "Không thể mở thư viện ảnh",
-        pickerError instanceof Error ? pickerError.message : "Vui lòng thử lại."
+        text.pickerErrorTitle,
+        pickerError instanceof Error ? pickerError.message : text.tryAgain
       );
       return;
     }
@@ -160,7 +259,7 @@ export default function App() {
   async function takePhoto() {
     const cameraPermissionStatus = await Camera.getCameraPermissionsAsync();
     if (Platform.OS === "ios" && !cameraPermissionStatus.canAskAgain && !cameraPermissionStatus.granted) {
-      Alert.alert("Không thể mở camera", "Hãy cấp quyền camera trong Settings rồi thử lại.");
+      Alert.alert(text.cameraSettingsTitle, text.cameraSettings);
       return;
     }
 
@@ -206,8 +305,8 @@ export default function App() {
       setIsCameraReady(false);
     } catch (cameraError) {
       Alert.alert(
-        "Không thể chụp ảnh",
-        cameraError instanceof Error ? cameraError.message : "Vui lòng thử lại."
+        text.captureErrorTitle,
+        cameraError instanceof Error ? cameraError.message : text.tryAgain
       );
     } finally {
       setIsCapturing(false);
@@ -216,13 +315,13 @@ export default function App() {
 
   async function analyzeImage() {
     if (!image || image.canceled || !image.assets?.length) {
-      setError("Vui lòng chọn hoặc chụp một ảnh trước.");
+      setError(text.chooseImageError);
       return;
     }
 
     setIsLoading(true);
     setError(null);
-    setStatus("Đang gửi ảnh lên server...");
+    setStatus(text.uploadStatus);
     setAnalysis(null);
     setExpandedResultCards({});
 
@@ -238,9 +337,10 @@ export default function App() {
       type: fileType
     } as any);
     formData.append("symptoms", symptoms.trim());
+    formData.append("language", language);
 
     try {
-      setStatus("AI đang phân tích ảnh. Vui lòng đợi...");
+      setStatus(text.analyzingStatus);
       const response = await fetch(API_URL, {
         method: "POST",
         body: formData
@@ -253,7 +353,7 @@ export default function App() {
       }
 
       setAnalysis(data.analysis);
-      setStatus("Phân tích hoàn tất.");
+      setStatus(text.doneStatus);
     } catch (fetchError) {
       setError(fetchError instanceof Error ? fetchError.message : "Đã xảy ra lỗi khi gửi ảnh.");
       setStatus(null);
@@ -269,9 +369,29 @@ export default function App() {
           <Image source={APP_LOGO} style={styles.brandLogo} />
         </View>
         <View style={styles.headerCopy}>
-          <Text style={styles.kicker}>Pet health check</Text>
-          <Text style={styles.title}>Pet_AI</Text>
-          <Text style={styles.subtitle}>Kiểm tra nhanh sức khỏe bé cưng từ một bức ảnh rõ nét.</Text>
+          <Text style={styles.kicker}>{text.heroEyebrow}</Text>
+          <Text style={styles.title}>{text.heroTitle}</Text>
+          <Text style={styles.subtitle}>{text.heroSubtitle}</Text>
+        </View>
+      </View>
+
+      <View style={styles.languageRow}>
+        <Text style={styles.languageLabel}>{text.language}</Text>
+        <View style={styles.languageToggle}>
+          <TouchableOpacity
+            style={[styles.languageOption, language === "en" && styles.languageOptionActive]}
+            onPress={() => setLanguage("en")}
+            activeOpacity={0.82}
+          >
+            <Text style={[styles.languageOptionText, language === "en" && styles.languageOptionTextActive]}>English</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.languageOption, language === "vi" && styles.languageOptionActive]}
+            onPress={() => setLanguage("vi")}
+            activeOpacity={0.82}
+          >
+            <Text style={[styles.languageOptionText, language === "vi" && styles.languageOptionTextActive]}>Tiếng Việt</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -280,7 +400,7 @@ export default function App() {
           <View style={styles.previewWrap}>
             <Image source={{ uri: selectedImageUri }} style={styles.preview} />
             <View style={styles.readyBadge}>
-              <Text style={styles.readyBadgeText}>Sẵn sàng phân tích</Text>
+              <Text style={styles.readyBadgeText}>{text.ready}</Text>
             </View>
           </View>
         ) : (
@@ -288,19 +408,19 @@ export default function App() {
             <View style={styles.emptyIcon}>
               <Text style={styles.emptyIconText}>+</Text>
             </View>
-            <Text style={styles.emptyTitle}>Thêm ảnh bé cưng</Text>
-            <Text style={styles.emptyText}>Ảnh rõ mặt, mắt, da hoặc vùng lông bất thường sẽ giúp kết quả tốt hơn.</Text>
+            <Text style={styles.emptyTitle}>{text.addPhoto}</Text>
+            <Text style={styles.emptyText}>{text.addPhotoHint}</Text>
           </TouchableOpacity>
         )}
 
         <View style={styles.buttonRow}>
           <TouchableOpacity style={styles.secondaryButton} onPress={takePhoto} activeOpacity={0.85}>
             <Text style={styles.buttonIcon}>CA</Text>
-            <Text style={styles.secondaryButtonText}>Chụp ảnh</Text>
+            <Text style={styles.secondaryButtonText}>{text.takePhoto}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.secondaryButton} onPress={pickImage} activeOpacity={0.85}>
             <Text style={styles.buttonIcon}>PH</Text>
-            <Text style={styles.secondaryButtonText}>Chọn ảnh</Text>
+            <Text style={styles.secondaryButtonText}>{text.choosePhoto}</Text>
           </TouchableOpacity>
         </View>
 
@@ -308,7 +428,7 @@ export default function App() {
           style={styles.symptomsInput}
           value={symptoms}
           onChangeText={setSymptoms}
-          placeholder="Nhập thông tin triệu chứng để AI phân tích chính xác hơn"
+          placeholder={text.symptomsPlaceholder}
           placeholderTextColor="#A99B8B"
           multiline
           textAlignVertical="top"
@@ -323,7 +443,7 @@ export default function App() {
           activeOpacity={0.9}
         >
           {isLoading ? <ActivityIndicator color="#ffffff" /> : null}
-          <Text style={styles.analyzeButtonText}>{isLoading ? "Đang phân tích..." : "Phân tích sức khỏe"}</Text>
+          <Text style={styles.analyzeButtonText}>{isLoading ? text.analyzing : text.analyze}</Text>
         </TouchableOpacity>
 
         {status ? <Text style={styles.status}>{status}</Text> : null}
@@ -334,71 +454,41 @@ export default function App() {
         <View style={styles.resultsSection}>
           <View style={styles.resultsHeader}>
             <View>
-              <Text style={styles.sectionEyebrow}>Kết quả</Text>
-              <Text style={styles.resultHeading}>Tóm tắt nhanh</Text>
+              <Text style={styles.sectionEyebrow}>{text.result}</Text>
+              <Text style={styles.resultHeading}>{text.quickSummary}</Text>
             </View>
             <RiskChip riskLevel={analysis.riskLevel} />
           </View>
 
           <View style={styles.quickResultCard}>
-            <Text style={styles.quickResultLabel}>Dự đoán</Text>
+            <Text style={styles.quickResultLabel}>{text.prediction}</Text>
             <Text style={styles.quickResultText}>
-              Nghi ngờ bị <Text style={styles.quickResultStrong}>{getConcernText(analysis)}</Text>.
+              {text.suspected} <Text style={styles.quickResultStrong}>{getConcernText(analysis)}</Text>.
             </Text>
-            <Text style={styles.petThoughtLabel}>Một chút tưởng tượng</Text>
+            <Text style={styles.petThoughtLabel}>{text.petThought}</Text>
             <Text style={styles.petThoughtText}>“{analysis.petThought}”</Text>
           </View>
 
           <CollapsibleInfoCard
-            title="Tóm tắt"
-            value={`${analysis.petTypeGuess}. ${analysis.summary}`}
-            expanded={!!expandedResultCards.summary}
-            onToggle={() => setExpandedResultCards((cards) => ({ ...cards, summary: !cards.summary }))}
-          />
-          <CollapsibleResultCard
-            title="Quan sát thấy"
-            items={analysis.observations}
-            expanded={!!expandedResultCards.observations}
-            onToggle={() => setExpandedResultCards((cards) => ({ ...cards, observations: !cards.observations }))}
-          />
-          <CollapsibleResultCard
-            title="Điểm cần chú ý"
-            items={analysis.possibleConcerns}
-            emptyText="Chưa thấy dấu hiệu đáng lo rõ ràng."
-            expanded={!!expandedResultCards.concerns}
-            onToggle={() => setExpandedResultCards((cards) => ({ ...cards, concerns: !cards.concerns }))}
-          />
-          <CollapsibleResultCard
-            title="Nên làm tiếp"
-            items={analysis.recommendedActions}
-            expanded={!!expandedResultCards.actions}
-            onToggle={() => setExpandedResultCards((cards) => ({ ...cards, actions: !cards.actions }))}
+            title={text.combinedSummary}
+            value={getShortCombinedSummary(analysis, language)}
+            expanded={!!expandedResultCards.shortSummary}
+            onToggle={() => setExpandedResultCards((cards) => ({ ...cards, shortSummary: !cards.shortSummary }))}
+            text={text}
           />
           <CollapsibleInfoCard
-            title="Lời khuyên thú y"
-            value={analysis.vetCareAdvice}
-            expanded={!!expandedResultCards.vetCare}
-            onToggle={() => setExpandedResultCards((cards) => ({ ...cards, vetCare: !cards.vetCare }))}
-          />
-          <CollapsibleInfoCard
-            title="Cảm xúc của bé"
-            value={analysis.emotion}
-            expanded={!!expandedResultCards.emotion}
-            onToggle={() => setExpandedResultCards((cards) => ({ ...cards, emotion: !cards.emotion }))}
-          />
-          <CollapsibleInfoCard
-            title="Giới hạn"
+            title={text.limitations}
             value={analysis.limitations}
             expanded={!!expandedResultCards.limitations}
             onToggle={() => setExpandedResultCards((cards) => ({ ...cards, limitations: !cards.limitations }))}
+            text={text}
             muted
           />
         </View>
       ) : null}
 
       <Text style={styles.safetyNote}>
-        Pet_AI chỉ hỗ trợ sàng lọc ban đầu. Nếu bé khó thở, chảy máu, co giật, bỏ ăn kéo dài hoặc đau nhiều,
-        hãy đưa bé đến bác sĩ thú y ngay.
+        {text.safety}
       </Text>
     </ScrollView>
   );
@@ -424,6 +514,19 @@ function getConcernText(analysis: HealthAnalysis) {
 
 function getObservationText(analysis: HealthAnalysis) {
   return analysis.observations.slice(0, 3).join(", ") || "ảnh chưa đủ rõ để đánh giá";
+}
+
+function getShortCombinedSummary(analysis: HealthAnalysis, language: AppLanguage) {
+  const text = uiText[language];
+  const observations = analysis.observations.slice(0, 2).join(", ") || text.unclearObservation;
+  const concerns =
+    analysis.possibleConcerns
+      .filter((concern) => !concern.toLowerCase().includes("chưa thấy"))
+      .slice(0, 2)
+      .join(", ") || text.noClearConcern;
+  const actions = analysis.recommendedActions.slice(0, 2).join(", ") || text.followUp;
+
+  return `${analysis.summary} ${text.mainObservation}: ${observations}. ${text.concernPoint}: ${concerns}. ${text.nextStep}: ${actions}. ${text.vetAdvice}: ${analysis.vetCareAdvice} ${text.petEmotion}: ${analysis.emotion}.`;
 }
 
 function stripLeadingConcernPhrase(text: string) {
@@ -492,7 +595,7 @@ function LoadingScreen({ onFinish }: { onFinish: () => void }) {
           <Image source={APP_LOGO} style={styles.loadingLogoImage} />
         </View>
       </View>
-      <Text style={styles.loadingTitle}>Pet_AI</Text>
+      <Text style={styles.loadingTitle}>BossCare</Text>
       <Text style={styles.loadingSubtitle}>Đang chuẩn bị góc kiểm tra cho bé cưng...</Text>
 
       <View style={styles.loadingTrackWrap}>
@@ -529,58 +632,26 @@ function RiskChip({ riskLevel }: { riskLevel: string }) {
   );
 }
 
-function CollapsibleResultCard({
-  title,
-  items,
-  expanded,
-  onToggle,
-  emptyText = "Không có mục nào."
-}: {
-  title: string;
-  items: string[];
-  expanded: boolean;
-  onToggle: () => void;
-  emptyText?: string;
-}) {
-  return (
-    <View style={styles.resultCard}>
-      <TouchableOpacity style={styles.resultCardHeader} onPress={onToggle} activeOpacity={0.78}>
-        <Text style={styles.resultLabel}>{title}</Text>
-        <Text style={styles.resultToggle}>{expanded ? "Ẩn" : "Xem chi tiết"}</Text>
-      </TouchableOpacity>
-      {expanded ? (
-        items.length > 0 ? (
-          items.map((item, index) => (
-            <Text key={index} style={styles.resultValue}>
-              • {item}
-            </Text>
-          ))
-        ) : (
-          <Text style={styles.resultValue}>{emptyText}</Text>
-        )
-      ) : null}
-    </View>
-  );
-}
-
 function CollapsibleInfoCard({
   title,
   value,
   expanded,
   onToggle,
+  text,
   muted = false
 }: {
   title: string;
   value: string;
   expanded: boolean;
   onToggle: () => void;
+  text: (typeof uiText)[AppLanguage];
   muted?: boolean;
 }) {
   return (
     <View style={[styles.resultCard, muted && styles.mutedCard]}>
       <TouchableOpacity style={styles.resultCardHeader} onPress={onToggle} activeOpacity={0.78}>
         <Text style={styles.resultLabel}>{title}</Text>
-        <Text style={styles.resultToggle}>{expanded ? "Ẩn" : "Xem chi tiết"}</Text>
+        <Text style={styles.resultToggle}>{expanded ? text.hide : text.showDetails}</Text>
       </TouchableOpacity>
       {expanded ? <Text style={styles.resultValue}>{value}</Text> : null}
     </View>
@@ -782,6 +853,44 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 22
+  },
+  languageRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    marginBottom: 14
+  },
+  languageLabel: {
+    color: "#5E665D",
+    fontSize: 13,
+    fontWeight: "900"
+  },
+  languageToggle: {
+    flexDirection: "row",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#F1DFCC",
+    padding: 4
+  },
+  languageOption: {
+    minHeight: 34,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  languageOptionActive: {
+    backgroundColor: "#2F8F62"
+  },
+  languageOptionText: {
+    color: "#5E665D",
+    fontSize: 12,
+    fontWeight: "900"
+  },
+  languageOptionTextActive: {
+    color: "#FFFFFF"
   },
   brandMark: {
     width: 64,
