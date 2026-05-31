@@ -10,7 +10,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.phamduckien.petai",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "infoPlist": {
         "NSCameraUsageDescription": "BossCare cần quyền camera để chụp ảnh thú cưng trước khi phân tích.",
         "NSPhotoLibraryUsageDescription": "BossCare cần quyền thư viện ảnh để chọn ảnh thú cưng trước khi phân tích.",

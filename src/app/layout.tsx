@@ -3,13 +3,17 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "BossCare",
-  description: "Sàng lọc sức khỏe sơ bộ cho chó và mèo bằng ảnh."
+  description: "Sàng lọc sức khỏe sơ bộ cho chó và mèo bằng ảnh.",
+  icons: {
+    icon: "/logo-ai-paw.png",
+    apple: "/logo-ai-paw.png"
+  }
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#fff8ef"
+  themeColor: "#fdf6ec"
 };
 
 export default function RootLayout({

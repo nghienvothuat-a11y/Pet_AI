@@ -55,5 +55,7 @@ const API_URL = "https://pet-ai-sooty.vercel.app/api/analyze";
 ## Ghi chú
 
 - Backend OpenAI vẫn chạy ở server. Mobile app chỉ gửi ảnh đến API và hiển thị kết quả.
+- Lịch sử scan được lưu cục bộ trên máy bằng AsyncStorage và Expo FileSystem, không lưu vào cloud của BossCare.
+- Ảnh trong lịch sử được copy vào vùng lưu trữ riêng của app để hạn chế phụ thuộc vào file tạm từ camera/thư viện ảnh.
 - Nếu muốn dùng máy thật, đảm bảo điện thoại và máy dev cùng mạng LAN.
 - Nếu muốn tiếp tục, có thể bổ sung `expo-camera` để xây dựng UI camera native hơn.

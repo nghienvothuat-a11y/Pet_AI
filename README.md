@@ -19,7 +19,8 @@ BossCare là ứng dụng web mobile-first cho phép người dùng chụp hoặ
   - “Có thể là ..., nhưng không chắc chắn...”
   - Hoặc “Pet của bạn trông bình thường...”
 - Hiển thị mức rủi ro: thấp, trung bình, cao, cần gặp bác sĩ ngay, chưa rõ.
-- Không lưu ảnh hoặc kết quả vào database trong MVP.
+- Mobile app lưu lịch sử các lần quét cục bộ trên điện thoại để người dùng xem lại.
+- Không lưu lịch sử scan vào cloud/database của BossCare.
 
 ## Tech Stack
 
@@ -28,6 +29,7 @@ BossCare là ứng dụng web mobile-first cho phép người dùng chụp hoặ
 - TypeScript
 - OpenAI Responses API
 - Vercel deployment
+- Mobile local storage: AsyncStorage và Expo FileSystem
 
 ## Cài đặt local
 
@@ -104,6 +106,8 @@ npx vercel --prod
 src/app/page.tsx              # UI upload/chụp ảnh và hiển thị kết quả
 src/app/api/analyze/route.ts  # API route gọi OpenAI
 src/lib/petAnalysis.ts        # schema, types, validate và parse kết quả AI
+src/app/privacy/page.tsx      # Privacy Policy
+mobile/App.tsx                # Expo mobile app, camera/photo picker, local scan history
 test/petAnalysis.test.mjs     # test cho parse/extract helper
 ```
 
@@ -116,7 +120,24 @@ test/petAnalysis.test.mjs     # test cho parse/extract helper
 5. Backend validate định dạng/dung lượng ảnh.
 6. Backend gọi OpenAI Responses API với prompt an toàn.
 7. AI trả JSON theo schema cố định.
-8. UI hiển thị kết quả ngắn gọn cho người dùng.
+8. UI hiển thị kết quả ngắn gọn trong popup.
+9. Trên mobile, app copy ảnh vào vùng lưu trữ riêng của app và lưu lịch sử scan bằng AsyncStorage.
+
+## Lưu lịch sử scan trên mobile
+
+Mobile app lưu lịch sử scan cục bộ trên thiết bị, không lưu trên cloud của BossCare.
+
+Mỗi bản ghi lịch sử gồm:
+
+- Ảnh thú cưng đã được copy vào sandbox của app.
+- Thời gian quét.
+- Triệu chứng người dùng nhập.
+- Ngôn ngữ phân tích.
+- Kết quả AI, mức rủi ro và khuyến nghị.
+
+Người dùng có thể mở nút “Lịch sử” trong app để xem lại các lần quét, mở lại popup kết quả, xóa từng bản ghi hoặc xóa toàn bộ lịch sử.
+
+Lưu ý: Khi người dùng bấm phân tích, ảnh và triệu chứng vẫn được gửi đến backend `/api/analyze` và OpenAI để tạo kết quả. BossCare không tạo tài khoản và không lưu lịch sử scan vào database phía server.
 
 ## Nguyên tắc an toàn
 
@@ -136,4 +157,6 @@ Nếu AI thấy dấu hiệu nghiêm trọng như khó thở, chảy máu nặng
 - Không commit `.env.local`.
 - Không đưa `OPENAI_API_KEY` vào frontend.
 - API key chỉ được dùng trong server route.
+- Lịch sử scan mobile chỉ nằm trong vùng lưu trữ local của app trên thiết bị.
+- Nếu gỡ app, dữ liệu local của app có thể bị xóa theo cơ chế iOS/Android.
 - Nếu API key từng bị chia sẻ công khai, nên rotate key trong OpenAI dashboard.

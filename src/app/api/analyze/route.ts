@@ -26,8 +26,10 @@ const vietnameseSystemPrompt = [
   `Nếu ảnh bình thường, petThought phải chọn đúng 1 câu phù hợp nhất từ danh sách sau, không tự viết câu khác: ${NORMAL_PET_THOUGHTS.join(" | ")}.`,
   "Nếu ảnh bình thường, petThought là nội dung chính để hiển thị cho người dùng. Câu này phải tự nhiên, ấm áp, không nói về bệnh.",
   "Khi có dấu hiệu bất thường, summary phải ghi rõ tên bệnh hoặc vấn đề nghi ngờ theo kiểu: 'Nghi ngờ bị viêm da/kích ứng da; vì thấy A, B. Bạn nên ...'. Tránh diễn đạt mơ hồ về độ chắc chắn.",
-  "Không dùng summary chung chung như 'Nghi ngờ bị một vấn đề sức khỏe bất thường'. Nếu chưa đủ dữ kiện, vẫn phải nêu nhóm bệnh/vấn đề cụ thể cần kiểm tra thêm, ví dụ: viêm da, dị ứng, nhiễm trùng da, viêm mắt, chấn thương, đau/kích ứng, bệnh răng miệng, mất nước.",
-  "possibleConcerns phải nêu tên bệnh hoặc vấn đề cụ thể. Ví dụ: 'Nghi ngờ viêm da hoặc dị ứng', 'Nghi ngờ nhiễm trùng da', 'Nghi ngờ có vấn đề kích động mạnh/kích ứng đau', 'Bệnh nguy hiểm cần loại trừ như bệnh dại'. Viết theo dạng nghi ngờ, không khẳng định là chẩn đoán cuối cùng.",
+  "Nếu có bất thường, petThought phải ghi đúng câu: 'Tôi cần đến gặp bác sĩ ngay.'. Không dùng câu tưởng tượng vui vẻ khi có dấu hiệu bệnh.",
+  "Không dùng summary chung chung như 'Nghi ngờ bị một vấn đề sức khỏe bất thường'. Nếu chưa đủ dữ kiện, vẫn phải nêu nhóm bệnh/vấn đề cụ thể cần kiểm tra thêm, ví dụ: viêm da, dị ứng, nhiễm trùng da, viêm tai, viêm mắt, chấn thương, đau/kích ứng, bệnh răng miệng, mất nước, ký sinh trùng da, nấm da, nhiễm trùng hô hấp, rối loạn tiêu hóa.",
+  "possibleConcerns phải nêu tên bệnh hoặc vấn đề cụ thể, ưu tiên các bệnh hay gặp ở chó mèo khi phù hợp với dấu hiệu nhìn thấy hoặc triệu chứng: viêm da/dị ứng da, nấm da, ký sinh trùng da, nhiễm trùng da, viêm tai, viêm mắt/kết mạc, bệnh răng miệng, chấn thương, đau/kích ứng, mất nước, nhiễm trùng hô hấp, rối loạn tiêu hóa. Ví dụ: 'Nghi ngờ viêm da hoặc dị ứng', 'Nghi ngờ nhiễm trùng da', 'Nghi ngờ viêm mắt/kết mạc', 'Bệnh nguy hiểm cần loại trừ như bệnh dại'. Viết theo dạng nghi ngờ, không khẳng định là chẩn đoán cuối cùng.",
+  "Nếu có bất thường, possibleConcerns không được để trống và không được chỉ ghi chung chung như 'vấn đề sức khỏe bất thường', 'cần kiểm tra thêm', hoặc 'chưa rõ'.",
   "Nếu nghi ngờ bệnh nguy hiểm như bệnh dại, phải ghi rõ tên bệnh trong possibleConcerns: 'Bệnh nguy hiểm cần loại trừ như bệnh dại'. Không khẳng định bị dại chỉ từ ảnh.",
   "observations, possibleConcerns, recommendedActions mỗi mục tối đa 3 ý, mỗi ý ngắn.",
   "Nếu thấy dấu hiệu nguy hiểm như khó thở, chảy máu nặng, co giật, bất tỉnh, vết thương nghiêm trọng, tổn thương mắt nặng, hoặc tình trạng đáng lo, đặt riskLevel là urgent và khuyên gặp bác sĩ thú y ngay.",
@@ -45,8 +47,10 @@ const englishSystemPrompt = [
   "Always fill emotion with one short sentence describing the visible expression or mood, for example: 'Looks relaxed and alert'. Do not claim certainty about inner feelings.",
   "If the image looks normal, petThought should be a warm, natural first-person sentence from the pet and should not mention illness.",
   "When there are abnormal signs, summary must name the suspected illness or issue clearly, for example: 'Suspected dermatitis/skin irritation because A and B are visible. You should ...'. Avoid vague uncertainty wording.",
-  "Do not use generic summary text such as 'suspected abnormal health issue'. If evidence is limited, still name a concrete disease group or issue to check further, such as dermatitis, allergy, skin infection, eye inflammation, injury, pain/irritation, dental disease, or dehydration.",
-  "possibleConcerns must name specific suspected diseases or issues. Examples: 'Suspected dermatitis or allergy', 'Suspected skin infection', 'Suspected intense agitation/pain irritation', 'Dangerous disease to rule out, such as rabies'. Write as suspected concerns, not final diagnoses.",
+  "If there are abnormal signs, petThought must be exactly: 'I need to see a veterinarian now.'. Do not use a playful imagination sentence when illness signs are present.",
+  "Do not use generic summary text such as 'suspected abnormal health issue'. If evidence is limited, still name a concrete disease group or issue to check further, such as dermatitis, allergy, skin infection, ear infection, eye inflammation/conjunctivitis, injury, pain/irritation, dental disease, dehydration, skin parasites, ringworm/fungal skin disease, respiratory infection, or digestive upset.",
+  "possibleConcerns must name specific suspected diseases or issues, prioritizing common dog/cat conditions when they match the visible signs or symptoms: dermatitis/skin allergy, ringworm/fungal skin disease, skin parasites, skin infection, ear infection, eye inflammation/conjunctivitis, dental disease, injury, pain/irritation, dehydration, respiratory infection, digestive upset. Examples: 'Suspected dermatitis or allergy', 'Suspected skin infection', 'Suspected eye inflammation/conjunctivitis', 'Dangerous disease to rule out, such as rabies'. Write as suspected concerns, not final diagnoses.",
+  "If there are abnormal signs, possibleConcerns must not be empty and must not only say generic phrases such as 'abnormal health issue', 'needs further checking', or 'unclear'.",
   "If a dangerous disease such as rabies is suspected, explicitly name it in possibleConcerns: 'Dangerous disease to rule out, such as rabies'. Do not claim rabies from image alone.",
   "observations, possibleConcerns, and recommendedActions must each contain at most 3 short items.",
   "If urgent signs are visible, such as breathing difficulty, heavy bleeding, seizures, unconsciousness, serious wounds, severe eye injury, or a concerning condition, set riskLevel to urgent and advise seeing a veterinarian immediately.",
@@ -82,6 +86,12 @@ function getUserPrompt(language: AppLanguage, symptoms: string) {
 
 function jsonError(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
+}
+
+function getNonPetImageError(language: AppLanguage) {
+  return language === "vi"
+    ? "Không phải ảnh chó/mèo nên không thể phân tích."
+    : "This isn't a picture of a cat/dog, so it can't be analyzed.";
 }
 
 export async function POST(request: Request) {
@@ -184,7 +194,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    return NextResponse.json({ analysis: parseAnalysis(responseText) });
+    const analysis = parseAnalysis(responseText);
+
+    if (analysis.petTypeGuess === "unknown") {
+      return jsonError(getNonPetImageError(language), 422);
+    }
+
+    return NextResponse.json({ analysis });
   } catch (error) {
     console.error(error);
     return jsonError("Kết quả AI không đúng định dạng mong đợi. Vui lòng thử lại.", 502);
