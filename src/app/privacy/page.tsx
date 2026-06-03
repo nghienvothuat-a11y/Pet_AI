@@ -11,7 +11,7 @@ export default function PrivacyPage() {
       <section className="legalCard">
         <p className="eyebrow">BossCare</p>
         <h1>Privacy Policy</h1>
-        <p>Last updated: May 31, 2026</p>
+        <p>Last updated: June 2, 2026</p>
 
         <h2>What BossCare does</h2>
         <p>
@@ -41,6 +41,10 @@ export default function PrivacyPage() {
           BossCare uses OpenAI services to analyze submitted images and text. Submitted content may be processed by
           OpenAI according to its applicable service terms and privacy commitments.
         </p>
+        <p>
+          BossCare uses Google AdMob to show ads in the mobile app. AdMob may process device, app, advertising, and
+          diagnostic data to deliver, measure, and improve ads according to Google&apos;s policies.
+        </p>
 
         <h2>Storage</h2>
         <p>
@@ -59,6 +63,10 @@ export default function PrivacyPage() {
           BossCare may request camera access to take pet photos and photo library access to choose pet photos. Saving
           scan history inside the app&apos;s local storage does not require additional photo library or cloud storage
           permission.
+        </p>
+        <p>
+          The iOS app includes a microphone usage description because camera and audio SDK components may reference
+          microphone APIs. BossCare does not record audio for pet health analysis.
         </p>
 
         <h2>Children</h2>

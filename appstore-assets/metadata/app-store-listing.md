@@ -8,6 +8,8 @@
 - Secondary category: Medical
 - Content rights: The app does not contain third-party copyrighted content.
 - Age rating suggestion: 4+
+- Bundle ID: com.phamduckien.petai
+- Current distribution build: 1.0.0 (8)
 
 ## URLs
 
@@ -25,6 +27,8 @@ BossCare supports English and Vietnamese. It is designed for quick guidance, not
 
 Scan history is stored locally on your device so you can review previous results. BossCare does not store your scan history in BossCare cloud storage.
 
+The mobile app may show ads through Google AdMob.
+
 Important: BossCare is only preliminary screening and does not replace a veterinarian. If your pet has breathing trouble, heavy bleeding, seizures, severe pain, eye trauma, loss of consciousness, or prolonged appetite loss, seek veterinary care immediately.
 
 ## Keywords
@@ -37,7 +41,15 @@ Check your pet's health from a clear photo and symptom notes with cautious AI gu
 
 ## What's New
 
-BossCare now supports English and Vietnamese, symptom notes, camera capture, image picking, local scan history, and a focused result popup with expandable details.
+Updated App Store assets for the latest mobile build. BossCare supports English and Vietnamese, symptom notes, camera capture, image picking, local scan history, AdMob banner/interstitial placements, and a focused result popup with expandable details.
+
+## Privacy Nutrition Notes
+
+- Data linked to user: none by BossCare accounts, because the app does not create accounts.
+- Data used for AI analysis: pet photo, optional symptom text, selected language, and basic request data.
+- Local data: scan history can be stored locally on device and deleted in app.
+- Third-party processing: OpenAI processes submitted analysis requests; Google AdMob may process device/app/advertising/diagnostic data for ads.
+- Permissions: camera, photo library, photo library add, microphone purpose string for SDK API references. BossCare does not record audio for analysis.
 
 ## Review Contact
 

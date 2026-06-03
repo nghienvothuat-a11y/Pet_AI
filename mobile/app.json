@@ -1,4 +1,8 @@
 {
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-3940256099942544~3347511713",
+    "ios_app_id": "ca-app-pub-7806638519709442~7620954816"
+  },
   "expo": {
     "name": "BossCare",
     "slug": "pet-ai-mobile",
@@ -6,13 +10,26 @@
     "icon": "./assets/icon.png",
     "platforms": ["ios", "android"],
     "extra": {
-      "apiUrl": "https://pet-ai-sooty.vercel.app/api/analyze"
+      "apiUrl": "https://pet-ai-sooty.vercel.app/api/analyze",
+      "admobBannerUnitId": "ca-app-pub-7806638519709442/2642440398",
+      "admobInterstitialUnitId": "ca-app-pub-7806638519709442/6060765050",
+      "useAdMobTestAds": false
     },
+    "plugins": [
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
+          "iosAppId": "ca-app-pub-7806638519709442~7620954816"
+        }
+      ]
+    ],
     "ios": {
       "bundleIdentifier": "com.phamduckien.petai",
-      "buildNumber": "4",
+      "buildNumber": "8",
       "infoPlist": {
         "NSCameraUsageDescription": "BossCare cần quyền camera để chụp ảnh thú cưng trước khi phân tích.",
+        "NSMicrophoneUsageDescription": "BossCare không ghi âm. Quyền microphone chỉ được khai báo vì một số thành phần camera/âm thanh của ứng dụng có thể tham chiếu microphone.",
         "NSPhotoLibraryUsageDescription": "BossCare cần quyền thư viện ảnh để chọn ảnh thú cưng trước khi phân tích.",
         "NSPhotoLibraryAddUsageDescription": "BossCare cần quyền lưu ảnh khi bạn muốn lưu ảnh từ ứng dụng."
       }

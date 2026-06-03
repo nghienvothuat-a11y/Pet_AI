@@ -32,3 +32,10 @@ replaceInFile("node_modules/react-native/ReactCommon/yoga/yoga/YGValue.h", [
   ["operator\"\" _pt", "operator\"\"_pt"],
   ["operator\"\" _percent", "operator\"\"_percent"]
 ]);
+
+replaceInFile("node_modules/react-native-google-mobile-ads/ios/RNGoogleMobileAds/RNGoogleMobileAdsNativeModule.mm", [
+  [
+    "RCT_EXPORT_MODULE();\n\n- (dispatch_queue_t)methodQueue {",
+    "RCT_EXPORT_MODULE();\n\n+ (BOOL)requiresMainQueueSetup {\n  return YES;\n}\n\n- (dispatch_queue_t)methodQueue {"
+  ]
+]);

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   ALLOWED_IMAGE_TYPES,
   MAX_IMAGE_BYTES,
@@ -149,6 +149,14 @@ const riskClasses: Record<RiskLevel, string> = {
   unknown: "riskUnknown"
 };
 
+const RESULT_SOUND_VOLUME = 0.35;
+const BACKGROUND_MUSIC_VOLUME = 0.16;
+const BACKGROUND_MUSIC_URL = "/sounds/chill-loop.wav";
+const resultSoundByPetType: Partial<Record<PetHealthAnalysis["petTypeGuess"], string>> = {
+  dog: "/sounds/dog-bark.wav",
+  cat: "/sounds/cat-meow.wav"
+};
+
 export default function Home() {
   const [language, setLanguage] = useState<AppLanguage>("en");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -161,6 +169,8 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [isResultModalOpen, setIsResultModalOpen] = useState(false);
   const [isResultDetailOpen, setIsResultDetailOpen] = useState(false);
+  const resultSoundRef = useRef<HTMLAudioElement | null>(null);
+  const backgroundMusicRef = useRef<HTMLAudioElement | null>(null);
   const text = uiText[language];
 
   const canSubmit = useMemo(() => Boolean(imageFile) && !isLoading, [imageFile, isLoading]);
@@ -185,6 +195,51 @@ export default function Home() {
       document.body.classList.remove("modalOpen");
     };
   }, [isResultModalOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (resultSoundRef.current) {
+        resultSoundRef.current.pause();
+        resultSoundRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const audio = new Audio(BACKGROUND_MUSIC_URL);
+    audio.loop = true;
+    audio.volume = BACKGROUND_MUSIC_VOLUME;
+    backgroundMusicRef.current = audio;
+
+    let didStart = false;
+
+    function startBackgroundMusic() {
+      if (didStart) {
+        return;
+      }
+
+      didStart = true;
+      audio.play().catch(() => {
+        didStart = false;
+      });
+    }
+
+    function startAfterUserGesture() {
+      startBackgroundMusic();
+    }
+
+    audio.play().catch(() => {
+      document.addEventListener("pointerdown", startAfterUserGesture, { once: true });
+      document.addEventListener("keydown", startAfterUserGesture, { once: true });
+    });
+
+    return () => {
+      document.removeEventListener("pointerdown", startAfterUserGesture);
+      document.removeEventListener("keydown", startAfterUserGesture);
+      audio.pause();
+      backgroundMusicRef.current = null;
+    };
+  }, []);
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -253,6 +308,7 @@ export default function Home() {
       setAnalysis(data.analysis);
       setIsResultDetailOpen(false);
       setIsResultModalOpen(true);
+      playResultSound(data.analysis.petTypeGuess);
       setStatusMessage(text.doneStatus);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Đã có lỗi xảy ra.");
@@ -260,6 +316,32 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  function playResultSound(petTypeGuess: PetHealthAnalysis["petTypeGuess"]) {
+    const soundUrl = resultSoundByPetType[petTypeGuess];
+
+    if (!soundUrl) {
+      return;
+    }
+
+    if (resultSoundRef.current) {
+      resultSoundRef.current.pause();
+    }
+
+    const audio = new Audio(soundUrl);
+    audio.volume = RESULT_SOUND_VOLUME;
+    resultSoundRef.current = audio;
+    audio.addEventListener(
+      "ended",
+      () => {
+        if (resultSoundRef.current === audio) {
+          resultSoundRef.current = null;
+        }
+      },
+      { once: true }
+    );
+    audio.play().catch(() => undefined);
   }
 
   function clearImage() {

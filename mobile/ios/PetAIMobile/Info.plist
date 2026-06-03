@@ -21,7 +21,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
-	<string>4</string>
+	<string>8</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>
@@ -39,6 +39,8 @@
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>BossCare cần quyền camera để chụp ảnh thú cưng trước khi phân tích.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>BossCare không ghi âm. Quyền microphone chỉ được khai báo vì một số thành phần camera/âm thanh của ứng dụng có thể tham chiếu microphone.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>BossCare cần quyền thư viện ảnh để chọn ảnh thú cưng trước khi phân tích.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

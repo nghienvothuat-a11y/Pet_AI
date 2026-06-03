@@ -13,6 +13,7 @@
   "dependencies": {
     "@react-native-async-storage/async-storage": "^1.18.2",
     "expo": "^49.0.0",
+    "expo-av": "~13.4.1",
     "expo-camera": "~13.4.4",
     "expo-file-system": "~15.4.5",
     "expo-image-picker": "~14.1.1",
@@ -21,6 +22,7 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-native": "0.72.6",
+    "react-native-google-mobile-ads": "^14.8.0",
     "react-native-web": "0.19.13"
   },
   "devDependencies": {

@@ -20,6 +20,12 @@ Data handling:
 
 The MVP does not create user accounts and does not intentionally store uploaded pet photos or analysis results in a database. Images and optional symptom notes are processed to generate the requested analysis.
 
+The mobile app can store scan history locally on the device. Users can delete local scan history from inside the app. The app uses Google AdMob for banner and interstitial ad placements.
+
+Permissions:
+
+Camera and photo library permissions are used to capture or choose pet photos. The iOS build includes a microphone purpose string because camera/audio SDK components may reference microphone APIs; BossCare does not record audio for analysis.
+
 Backend:
 
 Production API endpoint: https://pet-ai-sooty.vercel.app/api/analyze

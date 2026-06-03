@@ -14,25 +14,23 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import Constants from "expo-constants";
 import { Camera, CameraType } from "expo-camera";
-import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
+import { API_URL, CONTACT_EMAIL } from "./src/config";
+import {
+  createScanHistoryItem,
+  deleteHistoryImage,
+  loadAppSettings,
+  loadScanHistory,
+  persistAppSettings,
+  persistScanHistory,
+  SCAN_HISTORY_LIMIT
+} from "./src/storage";
+import type { AnalyzeResponse, AppLanguage, HealthAnalysis, ScanHistoryItem } from "./src/types";
+import { BottomAdBanner, useAdMobInterstitial } from "./src/useAdMobAds";
+import { usePetAudio } from "./src/usePetAudio";
 
-const configuredApiUrl = Constants.expoConfig?.extra?.apiUrl;
-const API_URL =
-  typeof configuredApiUrl === "string" && configuredApiUrl
-    ? configuredApiUrl
-    : Platform.OS === "android"
-      ? "http://10.0.2.2:3000/api/analyze"
-      : "http://localhost:3000/api/analyze";
 const APP_LOGO = require("./assets/logo-ai-paw.png");
-const SCAN_HISTORY_KEY = "bosscare.scanHistory.v1";
-const SCAN_HISTORY_LIMIT = 100;
-const SCAN_HISTORY_DIR = `${FileSystem.documentDirectory || ""}bosscare-scan-history/`;
-
-type AppLanguage = "en" | "vi";
 
 const uiText = {
   en: {
@@ -60,6 +58,24 @@ const uiText = {
     captureErrorTitle: "Cannot take photo",
     tryAgain: "Please try again.",
     close: "Close",
+    settings: "Settings",
+    settingsTitle: "Settings",
+    settingsSubtitle: "Sound, language, and policy",
+    backgroundMusic: "Background music",
+    backgroundMusicHint: "Soft relax music when you enter the app.",
+    soundEffects: "Pet sounds",
+    soundEffectsHint: "Play a cute bark or meow when scan results appear.",
+    on: "On",
+    off: "Off",
+    policyTitle: "Privacy & policy",
+    policyIntro:
+      "BossCare is preliminary screening only. It does not replace a veterinarian and does not provide a final diagnosis.",
+    policyData:
+      "When you analyze a scan, the selected pet photo, optional symptoms, and language are sent to the BossCare backend and OpenAI to generate the result.",
+    policyStorage:
+      "Scan history is saved locally on this phone only. BossCare does not create accounts or store your scan history in cloud storage.",
+    contactTitle: "Contact",
+    contactEmail: "Email",
     cameraHint: "Place your pet's face or the area to check in the center",
     ready: "Ready to analyze",
     result: "Result",
@@ -127,6 +143,24 @@ const uiText = {
     captureErrorTitle: "Không thể chụp ảnh",
     tryAgain: "Vui lòng thử lại.",
     close: "Đóng",
+    settings: "Cài đặt",
+    settingsTitle: "Cài đặt",
+    settingsSubtitle: "Âm thanh, ngôn ngữ và policy",
+    backgroundMusic: "Nhạc nền",
+    backgroundMusicHint: "Nhạc chill nhẹ khi vào app.",
+    soundEffects: "Âm thanh thú cưng",
+    soundEffectsHint: "Phát tiếng sủa hoặc meo cute khi có kết quả scan.",
+    on: "Bật",
+    off: "Tắt",
+    policyTitle: "Quyền riêng tư & policy",
+    policyIntro:
+      "BossCare chỉ hỗ trợ sàng lọc sơ bộ. Ứng dụng không thay thế bác sĩ thú y và không đưa ra chẩn đoán cuối cùng.",
+    policyData:
+      "Khi phân tích, ảnh thú cưng, triệu chứng tùy chọn và ngôn ngữ sẽ được gửi đến backend BossCare và OpenAI để tạo kết quả.",
+    policyStorage:
+      "Lịch sử scan chỉ lưu cục bộ trên điện thoại này. BossCare không tạo tài khoản và không lưu lịch sử scan lên cloud.",
+    contactTitle: "Liên hệ",
+    contactEmail: "Email",
     cameraHint: "Đưa mặt hoặc vùng cần kiểm tra của bé vào giữa khung",
     ready: "Sẵn sàng phân tích",
     result: "Kết quả",
@@ -171,35 +205,11 @@ const uiText = {
   }
 };
 
-type HealthAnalysis = {
-  petTypeGuess: string;
-  summary: string;
-  observations: string[];
-  riskLevel: string;
-  possibleConcerns: string[];
-  recommendedActions: string[];
-  vetCareAdvice: string;
-  emotion: string;
-  petThought: string;
-  limitations: string;
-};
-
-type ScanHistoryItem = {
-  id: string;
-  createdAt: string;
-  imageUri: string;
-  symptoms: string;
-  language: AppLanguage;
-  analysis: HealthAnalysis;
-};
-
-type AnalyzeResponse = {
-  analysis?: HealthAnalysis;
-  error?: string;
-};
-
 export default function App() {
   const [language, setLanguage] = useState<AppLanguage>("en");
+  const [backgroundMusicEnabled, setBackgroundMusicEnabled] = useState(true);
+  const [soundEffectsEnabled, setSoundEffectsEnabled] = useState(true);
+  const [hasLoadedSettings, setHasLoadedSettings] = useState(false);
   const [isAppReady, setIsAppReady] = useState(false);
   const [image, setImage] = useState<ImagePicker.ImagePickerResult | null>(null);
   const [analysis, setAnalysis] = useState<HealthAnalysis | null>(null);
@@ -212,6 +222,7 @@ export default function App() {
   const [isCapturing, setIsCapturing] = useState(false);
   const [isResultModalVisible, setIsResultModalVisible] = useState(false);
   const [isResultDetailVisible, setIsResultDetailVisible] = useState(false);
+  const [isSettingsVisible, setIsSettingsVisible] = useState(false);
   const [screen, setScreen] = useState<"scan" | "history">("scan");
   const [scanHistory, setScanHistory] = useState<ScanHistoryItem[]>([]);
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<ScanHistoryItem | null>(null);
@@ -220,9 +231,33 @@ export default function App() {
   const cameraRef = useRef<Camera | null>(null);
   const selectedImageUri = !image || image.canceled ? null : image.assets?.[0]?.uri;
   const text = uiText[language];
+  const { playResultSound } = usePetAudio({
+    isAppReady,
+    backgroundMusicEnabled,
+    soundEffectsEnabled
+  });
+  const { showInterstitial } = useAdMobInterstitial();
 
   useEffect(() => {
     let isMounted = true;
+
+    loadAppSettings()
+      .then((settings) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setLanguage(settings.language);
+        setBackgroundMusicEnabled(settings.backgroundMusicEnabled);
+        setSoundEffectsEnabled(settings.soundEffectsEnabled);
+        setHasLoadedSettings(true);
+      })
+      .catch((settingsError) => {
+        console.warn("Could not load app settings", settingsError);
+        if (isMounted) {
+          setHasLoadedSettings(true);
+        }
+      });
 
     loadScanHistory()
       .then((items) => {
@@ -239,70 +274,99 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!hasLoadedSettings) {
+      return;
+    }
+
+    void persistAppSettings({
+      language,
+      backgroundMusicEnabled,
+      soundEffectsEnabled
+    });
+  }, [backgroundMusicEnabled, hasLoadedSettings, language, soundEffectsEnabled]);
+
   if (!isAppReady) {
-    return <LoadingScreen onFinish={() => setIsAppReady(true)} />;
+    return (
+      <View style={styles.appShell}>
+        <View style={styles.appContent}>
+          <LoadingScreen onFinish={() => setIsAppReady(true)} />
+        </View>
+        <BottomAdBanner />
+      </View>
+    );
   }
 
   if (isCameraOpen) {
     return (
-      <View style={styles.cameraScreen}>
-        <Camera
-          ref={cameraRef}
-          style={styles.cameraPreview}
-          type={CameraType.back}
-          ratio="4:3"
-          onCameraReady={() => setIsCameraReady(true)}
-        >
-          <View style={styles.cameraTopBar}>
-            <TouchableOpacity
-              style={styles.cameraCloseButton}
-              onPress={() => {
-                setIsCameraOpen(false);
-                setIsCameraReady(false);
-              }}
-              activeOpacity={0.85}
+      <View style={styles.appShell}>
+        <View style={styles.appContent}>
+          <View style={styles.cameraScreen}>
+            <Camera
+              ref={cameraRef}
+              style={styles.cameraPreview}
+              type={CameraType.back}
+              ratio="4:3"
+              onCameraReady={() => setIsCameraReady(true)}
             >
-              <Text style={styles.cameraCloseText}>{text.close}</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.cameraBottomBar}>
-            <Text style={styles.cameraHint}>{text.cameraHint}</Text>
-            <TouchableOpacity
-              style={[styles.captureButton, (!isCameraReady || isCapturing) && styles.captureButtonDisabled]}
-              onPress={capturePhoto}
-              disabled={!isCameraReady || isCapturing}
-              activeOpacity={0.85}
-            >
-              <View style={styles.captureButtonInner}>
-                {isCapturing ? <ActivityIndicator color="#2F8F62" /> : null}
+              <View style={styles.cameraTopBar}>
+                <TouchableOpacity
+                  style={styles.cameraCloseButton}
+                  onPress={() => {
+                    setIsCameraOpen(false);
+                    setIsCameraReady(false);
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.cameraCloseText}>{text.close}</Text>
+                </TouchableOpacity>
               </View>
-            </TouchableOpacity>
+
+              <View style={styles.cameraBottomBar}>
+                <Text style={styles.cameraHint}>{text.cameraHint}</Text>
+                <TouchableOpacity
+                  style={[styles.captureButton, (!isCameraReady || isCapturing) && styles.captureButtonDisabled]}
+                  onPress={capturePhoto}
+                  disabled={!isCameraReady || isCapturing}
+                  activeOpacity={0.85}
+                >
+                  <View style={styles.captureButtonInner}>
+                    {isCapturing ? <ActivityIndicator color="#2F8F62" /> : null}
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </Camera>
           </View>
-        </Camera>
+        </View>
+        <BottomAdBanner />
       </View>
     );
   }
 
   if (screen === "history") {
     return (
-      <HistoryScreen
-        items={scanHistory}
-        language={language}
-        onBack={() => setScreen("scan")}
-        onOpenItem={(item) => {
-          setSelectedHistoryItem(item);
-          setIsHistoryDetailVisible(false);
-          setIsHistoryResultVisible(true);
-        }}
-        onDeleteItem={deleteHistoryItem}
-        onClearHistory={clearHistory}
-        selectedItem={selectedHistoryItem}
-        historyResultVisible={isHistoryResultVisible}
-        historyDetailVisible={isHistoryDetailVisible}
-        onToggleHistoryDetail={() => setIsHistoryDetailVisible((visible) => !visible)}
-        onCloseHistoryResult={() => setIsHistoryResultVisible(false)}
-      />
+      <View style={styles.appShell}>
+        <View style={styles.appContent}>
+          <HistoryScreen
+            items={scanHistory}
+            language={language}
+            onBack={() => setScreen("scan")}
+            onOpenItem={(item) => {
+              setSelectedHistoryItem(item);
+              setIsHistoryDetailVisible(false);
+              setIsHistoryResultVisible(true);
+            }}
+            onDeleteItem={deleteHistoryItem}
+            onClearHistory={clearHistory}
+            selectedItem={selectedHistoryItem}
+            historyResultVisible={isHistoryResultVisible}
+            historyDetailVisible={isHistoryDetailVisible}
+            onToggleHistoryDetail={() => setIsHistoryDetailVisible((visible) => !visible)}
+            onCloseHistoryResult={() => setIsHistoryResultVisible(false)}
+          />
+        </View>
+        <BottomAdBanner />
+      </View>
     );
   }
 
@@ -479,6 +543,7 @@ export default function App() {
       });
       setIsResultDetailVisible(false);
       setIsResultModalVisible(true);
+      void playResultSound(data.analysis.petTypeGuess);
       setStatus(text.doneStatus);
     } catch (fetchError) {
       const message = fetchError instanceof Error ? fetchError.message : text.nonPetAnalyzeError;
@@ -516,6 +581,18 @@ export default function App() {
     }
   }
 
+  function changeLanguage(nextLanguage: AppLanguage) {
+    setLanguage(nextLanguage);
+    setAnalysis(null);
+    setIsResultModalVisible(false);
+    setIsResultDetailVisible(false);
+  }
+
+  function closeScanResultModal() {
+    setIsResultModalVisible(false);
+    setTimeout(showInterstitial, 250);
+  }
+
   async function deleteHistoryItem(item: ScanHistoryItem) {
     const nextHistory = scanHistory.filter((historyItem) => historyItem.id !== item.id);
     await persistScanHistory(nextHistory);
@@ -549,6 +626,8 @@ export default function App() {
   }
 
   return (
+    <View style={styles.appShell}>
+      <View style={styles.appContent}>
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
         <View style={styles.brandMark}>
@@ -559,6 +638,15 @@ export default function App() {
           <Text style={styles.title}>{text.heroTitle}</Text>
           <Text style={styles.subtitle}>{text.heroSubtitle}</Text>
         </View>
+        <TouchableOpacity
+          style={styles.settingsButton}
+          onPress={() => setIsSettingsVisible(true)}
+          activeOpacity={0.84}
+          accessibilityRole="button"
+          accessibilityLabel={text.settings}
+        >
+          <Text style={styles.settingsButtonIcon}>🐾</Text>
+        </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.historyEntryButton} onPress={() => setScreen("history")} activeOpacity={0.86}>
@@ -568,36 +656,6 @@ export default function App() {
         </View>
         <Text style={styles.historyEntryCount}>{scanHistory.length}</Text>
       </TouchableOpacity>
-
-      <View style={styles.languageRow}>
-        <Text style={styles.languageLabel}>{text.language}</Text>
-        <View style={styles.languageToggle}>
-          <TouchableOpacity
-            style={[styles.languageOption, language === "en" && styles.languageOptionActive]}
-            onPress={() => {
-              setLanguage("en");
-              setAnalysis(null);
-              setIsResultModalVisible(false);
-              setIsResultDetailVisible(false);
-            }}
-            activeOpacity={0.82}
-          >
-          <Text style={[styles.languageOptionText, language === "en" && styles.languageOptionTextActive]}>English</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.languageOption, language === "vi" && styles.languageOptionActive]}
-            onPress={() => {
-              setLanguage("vi");
-              setAnalysis(null);
-              setIsResultModalVisible(false);
-              setIsResultDetailVisible(false);
-            }}
-            activeOpacity={0.82}
-          >
-          <Text style={[styles.languageOptionText, language === "vi" && styles.languageOptionTextActive]}>Tiếng Việt</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
 
       <View style={styles.photoPanel}>
         {selectedImageUri ? (
@@ -672,7 +730,7 @@ export default function App() {
             visible={isResultModalVisible}
             detailsVisible={isResultDetailVisible}
             onToggleDetails={() => setIsResultDetailVisible((visible) => !visible)}
-            onClose={() => setIsResultModalVisible(false)}
+            onClose={closeScanResultModal}
           />
         </>
       ) : null}
@@ -680,7 +738,21 @@ export default function App() {
       <Text style={styles.safetyNote}>
         {text.safety}
       </Text>
+
+      <SettingsModal
+        visible={isSettingsVisible}
+        language={language}
+        backgroundMusicEnabled={backgroundMusicEnabled}
+        soundEffectsEnabled={soundEffectsEnabled}
+        onChangeLanguage={changeLanguage}
+        onToggleBackgroundMusic={setBackgroundMusicEnabled}
+        onToggleSoundEffects={setSoundEffectsEnabled}
+        onClose={() => setIsSettingsVisible(false)}
+      />
     </ScrollView>
+      </View>
+      <BottomAdBanner />
+    </View>
   );
 }
 
@@ -907,102 +979,6 @@ function parseAnalyzeResponse(responseText: string, fallbackError: string): Anal
   }
 }
 
-async function loadScanHistory(): Promise<ScanHistoryItem[]> {
-  const rawHistory = await AsyncStorage.getItem(SCAN_HISTORY_KEY);
-
-  if (!rawHistory) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(rawHistory);
-
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed.filter(isScanHistoryItem).slice(0, SCAN_HISTORY_LIMIT);
-  } catch {
-    return [];
-  }
-}
-
-async function persistScanHistory(items: ScanHistoryItem[]) {
-  await AsyncStorage.setItem(SCAN_HISTORY_KEY, JSON.stringify(items.slice(0, SCAN_HISTORY_LIMIT)));
-}
-
-async function createScanHistoryItem({
-  analysis,
-  imageUri,
-  symptoms,
-  language
-}: {
-  analysis: HealthAnalysis;
-  imageUri: string;
-  symptoms: string;
-  language: AppLanguage;
-}): Promise<ScanHistoryItem> {
-  const id = `${Date.now()}-${Math.round(Math.random() * 1_000_000)}`;
-  const copiedImageUri = await copyScanImageToLocalHistory(imageUri, id);
-
-  return {
-    id,
-    createdAt: new Date().toISOString(),
-    imageUri: copiedImageUri,
-    symptoms,
-    language,
-    analysis
-  };
-}
-
-async function copyScanImageToLocalHistory(imageUri: string, id: string) {
-  await FileSystem.makeDirectoryAsync(SCAN_HISTORY_DIR, { intermediates: true });
-  const destination = `${SCAN_HISTORY_DIR}${id}${getImageExtension(imageUri)}`;
-
-  await FileSystem.copyAsync({
-    from: imageUri,
-    to: destination
-  });
-
-  return destination;
-}
-
-async function deleteHistoryImage(imageUri: string) {
-  try {
-    if (!imageUri.startsWith(SCAN_HISTORY_DIR)) {
-      return;
-    }
-
-    await FileSystem.deleteAsync(imageUri, { idempotent: true });
-  } catch (deleteError) {
-    console.warn("Could not delete scan history image", deleteError);
-  }
-}
-
-function getImageExtension(imageUri: string) {
-  const extension = imageUri.match(/\.(jpe?g|png|webp|heic)$/i)?.[0]?.toLowerCase();
-  return extension || ".jpg";
-}
-
-function isScanHistoryItem(value: unknown): value is ScanHistoryItem {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const item = value as Partial<ScanHistoryItem>;
-
-  return (
-    typeof item.id === "string" &&
-    typeof item.createdAt === "string" &&
-    typeof item.imageUri === "string" &&
-    typeof item.symptoms === "string" &&
-    (item.language === "en" || item.language === "vi") &&
-    Boolean(item.analysis) &&
-    typeof item.analysis?.summary === "string" &&
-    Array.isArray(item.analysis?.possibleConcerns)
-  );
-}
-
 function formatHistoryDate(value: string, language: AppLanguage) {
   const date = new Date(value);
 
@@ -1197,6 +1173,146 @@ function LoadingScreen({ onFinish }: { onFinish: () => void }) {
   );
 }
 
+function SettingsModal({
+  visible,
+  language,
+  backgroundMusicEnabled,
+  soundEffectsEnabled,
+  onChangeLanguage,
+  onToggleBackgroundMusic,
+  onToggleSoundEffects,
+  onClose
+}: {
+  visible: boolean;
+  language: AppLanguage;
+  backgroundMusicEnabled: boolean;
+  soundEffectsEnabled: boolean;
+  onChangeLanguage: (language: AppLanguage) => void;
+  onToggleBackgroundMusic: (enabled: boolean) => void;
+  onToggleSoundEffects: (enabled: boolean) => void;
+  onClose: () => void;
+}) {
+  const text = uiText[language];
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.modalBackdrop}>
+        <TouchableOpacity style={styles.modalBackdropPressable} activeOpacity={1} onPress={onClose} />
+        <View style={styles.settingsModal}>
+          <View style={styles.settingsHeader}>
+            <View style={styles.settingsHeaderIcon}>
+              <Text style={styles.settingsHeaderIconText}>🐾</Text>
+            </View>
+            <View style={styles.settingsHeaderCopy}>
+              <Text style={styles.settingsTitle}>{text.settingsTitle}</Text>
+            </View>
+            <TouchableOpacity style={styles.settingsCloseButton} onPress={onClose} activeOpacity={0.82}>
+              <Text style={styles.settingsCloseButtonText}>×</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            style={styles.settingsScroll}
+            contentContainerStyle={styles.settingsBody}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.settingsSection}>
+              <Text style={styles.settingsSectionTitle}>{text.language}</Text>
+              <View style={styles.languageToggle}>
+                <TouchableOpacity
+                  style={[styles.languageOption, language === "en" && styles.languageOptionActive]}
+                  onPress={() => onChangeLanguage("en")}
+                  activeOpacity={0.82}
+                >
+                  <Text style={[styles.languageOptionText, language === "en" && styles.languageOptionTextActive]}>
+                    English
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.languageOption, language === "vi" && styles.languageOptionActive]}
+                  onPress={() => onChangeLanguage("vi")}
+                  activeOpacity={0.82}
+                >
+                  <Text style={[styles.languageOptionText, language === "vi" && styles.languageOptionTextActive]}>
+                    Tiếng Việt
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <SettingSwitchRow
+              title={text.backgroundMusic}
+              description={text.backgroundMusicHint}
+              value={backgroundMusicEnabled}
+              language={language}
+              onValueChange={onToggleBackgroundMusic}
+            />
+            <SettingSwitchRow
+              title={text.soundEffects}
+              description={text.soundEffectsHint}
+              value={soundEffectsEnabled}
+              language={language}
+              onValueChange={onToggleSoundEffects}
+            />
+
+            <View style={styles.policyPanel}>
+              <Text style={styles.settingsSectionTitle}>{text.policyTitle}</Text>
+              <Text style={styles.policyText}>{text.policyIntro}</Text>
+              <Text style={styles.policyText}>{text.policyData}</Text>
+              <Text style={styles.policyText}>{text.policyStorage}</Text>
+            </View>
+
+            <View style={styles.contactPanel}>
+              <Text style={styles.settingsSectionTitle}>{text.contactTitle}</Text>
+              <Text style={styles.contactLabel}>{text.contactEmail}</Text>
+              <Text style={styles.contactEmail}>{CONTACT_EMAIL}</Text>
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function SettingSwitchRow({
+  title,
+  description,
+  value,
+  language,
+  onValueChange
+}: {
+  title: string;
+  description: string;
+  value: boolean;
+  language: AppLanguage;
+  onValueChange: (value: boolean) => void;
+}) {
+  const text = uiText[language];
+
+  return (
+    <View style={styles.settingSwitchRow}>
+      <View style={styles.settingSwitchCopy}>
+        <Text style={styles.settingSwitchTitle}>{title}</Text>
+        <Text style={styles.settingSwitchDescription}>{description}</Text>
+      </View>
+      <View style={styles.settingToggleWrap}>
+        <Text style={[styles.settingToggleState, value && styles.settingToggleStateActive]}>
+          {value ? text.on : text.off}
+        </Text>
+        <TouchableOpacity
+          style={[styles.customSwitch, value && styles.customSwitchActive]}
+          onPress={() => onValueChange(!value)}
+          activeOpacity={0.82}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: value }}
+        >
+          <View style={[styles.customSwitchThumb, value && styles.customSwitchThumbActive]} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
 function RiskChip({ riskLevel }: { riskLevel: string }) {
   const tone = getRiskTone(riskLevel);
   return (
@@ -1335,6 +1451,13 @@ function getRiskTone(riskLevel: string) {
 }
 
 const styles = StyleSheet.create({
+  appShell: {
+    flex: 1,
+    backgroundColor: "#FFF8EF"
+  },
+  appContent: {
+    flex: 1
+  },
   cameraScreen: {
     flex: 1,
     backgroundColor: "#121812"
@@ -1500,6 +1623,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 22
   },
+  settingsButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#CDE6D1",
+    backgroundColor: "#EEF7EF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 10,
+    shadowColor: "#6D4C32",
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 3
+  },
+  settingsButtonIcon: {
+    color: "#2F8F62",
+    fontSize: 22,
+    fontWeight: "900",
+    lineHeight: 26
+  },
   languageRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1518,9 +1663,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#F1DFCC",
-    padding: 4
+    padding: 4,
+    alignSelf: "stretch"
   },
   languageOption: {
+    flex: 1,
     minHeight: 34,
     borderRadius: 12,
     paddingHorizontal: 12,
@@ -1953,6 +2100,200 @@ const styles = StyleSheet.create({
   },
   modalBackdropPressable: {
     ...StyleSheet.absoluteFillObject
+  },
+  settingsModal: {
+    width: "100%",
+    maxHeight: "90%",
+    borderRadius: 30,
+    backgroundColor: "#FFFAF4",
+    borderWidth: 1,
+    borderColor: "#EFD8BF",
+    overflow: "hidden",
+    shadowColor: "#252723",
+    shadowOpacity: 0.28,
+    shadowRadius: 28,
+    shadowOffset: { width: 0, height: 18 },
+    elevation: 12
+  },
+  settingsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1DFCC",
+    backgroundColor: "#FFF4E8"
+  },
+  settingsHeaderIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 17,
+    backgroundColor: "#2F8F62",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#1A5D3D",
+    shadowOpacity: 0.16,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 3
+  },
+  settingsHeaderIconText: {
+    color: "#FFFFFF",
+    fontSize: 23,
+    fontWeight: "900"
+  },
+  settingsHeaderCopy: {
+    flex: 1
+  },
+  settingsTitle: {
+    color: "#26352B",
+    fontSize: 24,
+    fontWeight: "900"
+  },
+  settingsCloseButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#F1DFCC",
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  settingsCloseButtonText: {
+    color: "#5E665D",
+    fontSize: 28,
+    fontWeight: "700",
+    lineHeight: 30
+  },
+  settingsScroll: {
+    width: "100%"
+  },
+  settingsBody: {
+    padding: 14,
+    gap: 12
+  },
+  settingsSection: {
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "#F1DFCC",
+    backgroundColor: "#FFFFFF",
+    padding: 14
+  },
+  settingsSectionTitle: {
+    color: "#26352B",
+    fontSize: 15,
+    fontWeight: "900",
+    marginBottom: 10
+  },
+  settingSwitchRow: {
+    minHeight: 78,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "#F1DFCC",
+    backgroundColor: "#FFFFFF",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 14,
+    padding: 14
+  },
+  settingSwitchCopy: {
+    flex: 1,
+    minWidth: 0
+  },
+  settingSwitchTitle: {
+    color: "#26352B",
+    fontSize: 15,
+    fontWeight: "900"
+  },
+  settingSwitchDescription: {
+    color: "#74695C",
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 17,
+    marginTop: 4
+  },
+  settingToggleWrap: {
+    width: 86,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 7
+  },
+  settingToggleState: {
+    minWidth: 34,
+    color: "#74695C",
+    fontSize: 11,
+    fontWeight: "900",
+    textAlign: "center",
+    textTransform: "uppercase"
+  },
+  settingToggleStateActive: {
+    color: "#2F8F62"
+  },
+  customSwitch: {
+    width: 56,
+    height: 32,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#DED1C2",
+    backgroundColor: "#E8DED1",
+    padding: 3,
+    justifyContent: "center"
+  },
+  customSwitchActive: {
+    borderColor: "#BDE8C8",
+    backgroundColor: "#BDE8C8"
+  },
+  customSwitchThumb: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#6D4C32",
+    shadowOpacity: 0.16,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3
+  },
+  customSwitchThumbActive: {
+    alignSelf: "flex-end",
+    backgroundColor: "#2F8F62"
+  },
+  policyPanel: {
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "#CDE6D1",
+    backgroundColor: "#EEF7EF",
+    padding: 14
+  },
+  policyText: {
+    color: "#445247",
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "700",
+    marginBottom: 9
+  },
+  contactPanel: {
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "#F1DFCC",
+    backgroundColor: "#FFFFFF",
+    padding: 14
+  },
+  contactLabel: {
+    color: "#74695C",
+    fontSize: 12,
+    fontWeight: "900",
+    textTransform: "uppercase",
+    marginBottom: 6
+  },
+  contactEmail: {
+    color: "#2F8F62",
+    fontSize: 15,
+    fontWeight: "900"
   },
   resultModal: {
     width: "100%",

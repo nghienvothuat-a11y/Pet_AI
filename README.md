@@ -21,6 +21,7 @@ BossCare là ứng dụng web mobile-first cho phép người dùng chụp hoặ
 - Hiển thị mức rủi ro: thấp, trung bình, cao, cần gặp bác sĩ ngay, chưa rõ.
 - Mobile app lưu lịch sử các lần quét cục bộ trên điện thoại để người dùng xem lại.
 - Không lưu lịch sử scan vào cloud/database của BossCare.
+- Mobile app tích hợp Google AdMob banner và interstitial. Cấu hình distribution mặc định dùng real AdMob unit IDs; chỉ bật Google test ads khi cần test quảng cáo trên TestFlight.
 
 ## Tech Stack
 
@@ -30,6 +31,7 @@ BossCare là ứng dụng web mobile-first cho phép người dùng chụp hoặ
 - OpenAI Responses API
 - Vercel deployment
 - Mobile local storage: AsyncStorage và Expo FileSystem
+- Mobile ads: react-native-google-mobile-ads / Google AdMob
 
 ## Cài đặt local
 
@@ -108,6 +110,8 @@ src/app/api/analyze/route.ts  # API route gọi OpenAI
 src/lib/petAnalysis.ts        # schema, types, validate và parse kết quả AI
 src/app/privacy/page.tsx      # Privacy Policy
 mobile/App.tsx                # Expo mobile app, camera/photo picker, local scan history
+mobile/src/useAdMobAds.tsx    # AdMob banner/interstitial initialization and unit selection
+appstore-assets/              # App Store icon, screenshots, listing draft, review notes
 test/petAnalysis.test.mjs     # test cho parse/extract helper
 ```
 
@@ -160,3 +164,16 @@ Nếu AI thấy dấu hiệu nghiêm trọng như khó thở, chảy máu nặng
 - Lịch sử scan mobile chỉ nằm trong vùng lưu trữ local của app trên thiết bị.
 - Nếu gỡ app, dữ liệu local của app có thể bị xóa theo cơ chế iOS/Android.
 - Nếu API key từng bị chia sẻ công khai, nên rotate key trong OpenAI dashboard.
+- AdMob App ID và Unit ID không phải secret, nhưng không hardcode test ads cho bản App Store production.
+
+## App Store distribution
+
+Các asset và nội dung listing đang nằm trong `appstore-assets/`:
+
+- Icon App Store: `appstore-assets/icon/app-icon-1024.png`
+- Screenshot iPhone 6.9-inch: `appstore-assets/screenshots/final/`
+- Listing draft: `appstore-assets/metadata/app-store-listing.md`
+- Review notes: `appstore-assets/metadata/review-notes.md`
+- Checklist: `appstore-assets/metadata/assets-checklist.md`
+
+Mobile build hiện dùng bundle id `com.phamduckien.petai`, App Store name `BossCare`, AdMob iOS App ID `ca-app-pub-7806638519709442~7620954816`, banner unit `ca-app-pub-7806638519709442/2642440398`, interstitial unit `ca-app-pub-7806638519709442/6060765050`.
